@@ -86,15 +86,23 @@ async def health() -> Dict[str, Any]:
     }
 
 
+ROUTER_ATTR_OVERRIDES: Dict[str, Tuple[str, ...]] = {
+    "writer_pro": ("writer_router", "router"),
+}
+
+
 def _try_import_router(modname: str) -> Tuple[Optional[Any], Optional[str]]:
+    attr_order = ROUTER_ATTR_OVERRIDES.get(modname, ("router",))
     try:
         m = importlib.import_module(modname)
-        r = getattr(m, "router", None)
-        if r is None:
-            return None, "no router attr"
-        return r, None
+        for attr in attr_order:
+            r = getattr(m, attr, None)
+            if r is not None:
+                return r, None
+        return None, f"no router attr (checked: {', '.join(attr_order)})"
     except Exception as e:
-        return None, f"{type(e).__name__}: {str(e)[:220]}"
+        err_text = str(e).replace("\n", " | ")
+        return None, f"{type(e).__name__}: {err_text[:220]}"
 
 
 def _include(router_obj: Any) -> Optional[str]:
@@ -112,11 +120,20 @@ print("=" * 70)
 # root routers
 root_modules = [
     ("assistant_simple", "Chat (Commercial)"),
+    ("assistant_endpoint", "Chat (Legacy Cognitive)",),
     ("stt_endpoint", "STT (Speech-to-Text)"),
     ("tts_endpoint", "TTS (Text-to-Speech)"),
     ("suggestions_endpoint", "Suggestions"),
     ("internal_endpoint", "Internal"),
     ("files_endpoint", "Files (Advanced)"),
+    ("research_endpoint", "Research (Legacy)"),
+    ("prometheus_endpoint", "Metrics (Legacy)"),
+    ("programista_endpoint", "Code Assistant"),
+    ("nlp_endpoint", "NLP"),
+    ("travel_endpoint", "Travel"),
+    ("writing_endpoint", "Writing"),
+    ("psyche_endpoint", "Psyche"),
+    ("writer_pro", "Writer Pro"),
     ("routers", "Admin/Debug"),
 ]
 
@@ -148,6 +165,13 @@ core_modules = [
     ("core.hybrid_search_endpoint", "Hybrid Search [core]"),
     ("core.batch_endpoint", "Batch Processing [core]"),
     ("core.prometheus_endpoint", "Metrics [core]"),
+    ("core.suggestions_endpoint", "Suggestions [core]"),
+    ("core.research_endpoint", "Research [core]"),
+    ("core.admin_endpoint", "Admin [core]"),
+    ("core.hacker_endpoint", "Hacker Assistant [core]"),
+    ("core.psyche_endpoint", "Psyche [core]"),
+    ("core.chat_advanced_endpoint", "Chat Advanced Compat [core]"),
+    ("core.auction_endpoint", "Auction [core]"),
 ]
 
 for mod, name in core_modules:

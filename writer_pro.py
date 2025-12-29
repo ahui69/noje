@@ -536,3 +536,7 @@ async def get_writing_templates(_=Depends(_auth_dep)) -> Dict[str, Any]:
         "count": len(templates),
         "timestamp": time.time(),
     }
+
+
+# Alias for FastAPI include compatibility
+router = writer_router
