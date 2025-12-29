@@ -9,5 +9,17 @@
 6. Sprawdź, co realnie się wczytało: `python audit_runtime_routes.py` (drukuje listę ładujących się routerów i pełny wykaz ścieżek).
 7. Endpointy `/health` (app) i `/health` z modułu Prometheus zwracają ten sam, spójny payload (status, wersja, ENV, metryki) – monitorowanie działa identycznie niezależnie od źródła.
 
+## Nowy frontend (React + Vite)
+1. Przejdź do `frontend/`.
+2. Zainstaluj zależności: `npm install`.
+3. Uruchom dev server: `npm run dev` (domyślnie `http://localhost:5173`).
+4. Zaloguj się tokenem Bearer (`AUTH_TOKEN` z backendu) na `/login`, następnie korzystaj z `/app/chat` (SSE) i `/app/settings`.
+
+### Kluczowe endpointy używane przez frontend
+- `/api/chat/assistant` (POST) i `/api/chat/assistant/stream` (POST, SSE) – chat z historią.
+- `/api/chat/sessions`, `/api/chat/sessions/{session_id}`, `/api/chat/sessions/{session_id}/title`, `/api/chat/sessions/{session_id}/delete` – zarządzanie sesjami.
+- `/api/files/upload` + `/api/files/list` – upload i lista plików (Bearer wymagany).
+- `/api/stt/transcribe`, `/api/tts/speak` – audio (opcjonalnie w UI, status w panelu).
+
 ## Gdzie jest pełny audyt
 Kompletny raport i plan napraw znajdziesz w `AUDYT_MRD.md` w katalogu głównym repozytorium.

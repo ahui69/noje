@@ -27,7 +27,7 @@
 | Metrics | GET | `/metrics` | Public | Prometheus text/exposition【F:FRONT/runtime_routes.txt†L179-L181】
 
 ## 3. Kluczowe "core flows" obecnie możliwe/niekompletne
-- **Sesje + historia**: Backend zapisuje sesje i wiadomości w SQLite w `assistant_simple`, ale nie wystawia endpointów do listowania sesji ani pobierania historii. UI może korzystać tylko pośrednio (poprzez `session_id` zwracany w odpowiedzi).【F:assistant_simple.py†L205-L283】【F:FRONT/runtime_routes.txt†L152-L156】
+- **Sesje + historia**: Backend zapisuje sesje i wiadomości w SQLite w `assistant_simple`; dodano pełne endpointy listowania/pobierania/tytułowania/usuwania sesji, zabezpieczone Bearer tokenem. UI może ładować historię i sidebar z danych `/api/chat/sessions*`.【F:assistant_simple.py†L70-L211】【F:assistant_simple.py†L299-L370】
 - **Chat (non-stream + SSE)**: Dostępne i działające (wymagają `LLM_API_KEY`, `LLM_MODEL`). Stream w formacie SSE z eventami `meta/delta/error/done`.【F:assistant_simple.py†L288-L520】
 - **Upload + analiza plików**: Pełny cykl upload/list/analyze/delete dostępny, z wymuszonym Bearer tokenem (domyślnie `changeme` → konieczna produkcyjna wartość).【F:files_endpoint.py†L17-L217】【F:FRONT/runtime_routes.txt†L167-L175】
 - **Audio (STT/TTS)**: Trasy istnieją, ale brak jasnego kontraktu odpowiedzi w kodzie → wymagana specyfikacja przed implementacją UI audio.【F:FRONT/runtime_routes.txt†L157-L161】

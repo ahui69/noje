@@ -90,6 +90,14 @@ def _db() -> sqlite3.Connection:
             FOREIGN KEY(session_id) REFERENCES sessions(id)
         )
     """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS session_meta (
+            session_id TEXT PRIMARY KEY,
+            title TEXT,
+            updated_at REAL NOT NULL,
+            FOREIGN KEY(session_id) REFERENCES sessions(id)
+        )
+    """)
     con.commit()
     return con
 
@@ -104,6 +112,10 @@ def _ensure_session(con: sqlite3.Connection, user_id: str, session_id: Optional[
             "INSERT INTO sessions(id,user_id,created_at,updated_at) VALUES(?,?,?,?)",
             (sid, user_id, now, now),
         )
+        con.execute(
+            "INSERT OR IGNORE INTO session_meta(session_id,title,updated_at) VALUES(?,?,?)",
+            (sid, None, now),
+        )
     con.commit()
     return sid
 
@@ -112,6 +124,24 @@ def _append_msg(con: sqlite3.Connection, session_id: str, user_id: str, role: st
         "INSERT INTO messages(id,session_id,user_id,role,content,ts) VALUES(?,?,?,?,?,?)",
         (str(uuid.uuid4()), session_id, user_id, role, content, _now()),
     )
+    con.execute("UPDATE sessions SET updated_at=? WHERE id=?", (_now(), session_id))
+    con.commit()
+
+
+def _session_title(con: sqlite3.Connection, session_id: str) -> Optional[str]:
+    row = con.execute("SELECT title FROM session_meta WHERE session_id=?", (session_id,)).fetchone()
+    if row:
+        return row[0]
+    return None
+
+
+def _set_session_title(con: sqlite3.Connection, session_id: str, title: str) -> None:
+    now = _now()
+    con.execute(
+        "INSERT INTO session_meta(session_id,title,updated_at) VALUES(?,?,?) ON CONFLICT(session_id) DO UPDATE SET title=excluded.title, updated_at=excluded.updated_at",
+        (session_id, title, now),
+    )
+    con.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id))
     con.commit()
 
 def _load_context(con: sqlite3.Connection, session_id: str, limit: int = 30) -> List[Dict[str, str]]:
@@ -285,8 +315,143 @@ async def chat_assistant(req: Request, body: ChatBody) -> Dict[str, Any]:
             con.close()
         except Exception:
             pass
+
+
+@router.get("/sessions")
+async def list_sessions(req: Request, limit: int = 100) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    con = _db()
+    try:
+        rows = con.execute(
+            """
+            SELECT s.id, s.user_id, s.created_at, s.updated_at, COALESCE(m.title, ""), COUNT(msg.id) AS messages
+            FROM sessions s
+            LEFT JOIN session_meta m ON m.session_id = s.id
+            LEFT JOIN messages msg ON msg.session_id = s.id
+            GROUP BY s.id
+            ORDER BY s.updated_at DESC
+            LIMIT ?
+            """,
+            (int(limit),),
+        ).fetchall()
+
+        sessions: List[Dict[str, Any]] = []
+        for row in rows:
+            sessions.append(
+                {
+                    "id": row[0],
+                    "user_id": row[1],
+                    "created_at": row[2],
+                    "updated_at": row[3],
+                    "title": row[4] or None,
+                    "messages": row[5],
+                }
+            )
+
+        return {"ok": True, "count": len(sessions), "sessions": sessions}
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+
+
+@router.get("/sessions/{session_id}")
+async def get_session(req: Request, session_id: str, limit: int = 200) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    con = _db()
+    try:
+        srow = con.execute(
+            "SELECT id, user_id, created_at, updated_at FROM sessions WHERE id=?",
+            (session_id,),
+        ).fetchone()
+        if not srow:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        messages = con.execute(
+            """
+            SELECT role, content, ts FROM messages WHERE session_id=? ORDER BY ts ASC LIMIT ?
+            """,
+            (session_id, int(limit)),
+        ).fetchall()
+        msgs = [
+            {"role": row[0], "content": row[1], "ts": row[2]} for row in messages
+        ]
+        title = _session_title(con, session_id)
+
+        return {
+            "ok": True,
+            "session_id": srow[0],
+            "user_id": srow[1],
+            "created_at": srow[2],
+            "updated_at": srow[3],
+            "title": title,
+            "messages": msgs,
+        }
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+
+
+class TitleBody(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+
+@router.post("/sessions/{session_id}/title")
+async def set_title(req: Request, session_id: str, body: TitleBody) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    title = body.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Empty title")
+
+    con = _db()
+    try:
+        exists = con.execute("SELECT 1 FROM sessions WHERE id=?", (session_id,)).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail="Session not found")
+        _set_session_title(con, session_id, title)
+        return {"ok": True, "session_id": session_id, "title": title}
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+
+
+@router.post("/sessions/{session_id}/delete")
+async def delete_session(req: Request, session_id: str) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    con = _db()
+    try:
+        exists = con.execute("SELECT 1 FROM sessions WHERE id=?", (session_id,)).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        con.execute("DELETE FROM messages WHERE session_id=?", (session_id,))
+        con.execute("DELETE FROM session_meta WHERE session_id=?", (session_id,))
+        con.execute("DELETE FROM sessions WHERE id=?", (session_id,))
+        con.commit()
+        return {"ok": True, "deleted": session_id}
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
 @router.post("/assistant/stream")
 async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingResponse:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
     import os
     import json
     import time
@@ -373,6 +538,17 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
     messages: List[Dict[str, str]] = []
     if sys_prompt:
         messages.append({"role": "system", "content": sys_prompt})
+
+    try:
+        if getattr(body, "use_history", True):
+            con_history = _db()
+            history_msgs = _load_context(con_history, getattr(body, "session_id", None) or uid, limit=30)
+            con_history.close()
+            if history_msgs:
+                messages.extend(history_msgs)
+    except Exception:
+        pass
+
     messages.extend([m for m in cleaned if m.get("role") != "system"])
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -408,6 +584,8 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
             pass
         con = None
 
+    user_text = text or (cleaned[-1]["content"] if cleaned else "")
+
     async def gen():
         nonlocal con, sid
 
@@ -417,6 +595,11 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
             if callable(_db_fn) and callable(_ensure_fn):
                 con = _db_fn()
                 sid = _ensure_fn(con, uid, req_sess)
+                try:
+                    if user_text:
+                        _append_msg(con, sid, uid, "user", user_text)
+                except Exception:
+                    pass
             else:
                 sid = req_sess or str(uuid.uuid4())
         except Exception:
