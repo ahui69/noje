@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""
+🚀 MORDZIX AI - SSH DEPLOYMENT via Python OS Commands
+"""
+import os
+import sys
+import time
+import platform
+import subprocess
+import tempfile
+
+HOST = "162.19.220.29"
+USER = "ubuntu"
+PASSWORD = "asdf12"
+PORT = 22
+
+FILES = [
+    "index_minimal_current.html",
+    "app.py",
+    "assistant_simple.py",
+    "requirements.txt"
+]
+
+REMOTE_DIR = "/home/ubuntu/app/"
+
+DEPLOY_CMD = """
+cd /home/ubuntu/app
+echo '🔄 STOPPING OLD BACKEND...'
+pkill -f 'python3.*app.py' 2>/dev/null || true
+sleep 2
+
+echo '🚀 STARTING BACKEND...'
+nohup python3 app.py > /tmp/mordzix.log 2>&1 &
+sleep 3
+
+echo '✅ STATUS:'
+curl -s http://localhost:8080/health || echo 'Starting...'
+
+echo ''
+echo '📊 LOGS:'
+tail -30 /tmp/mordzix.log
+
+echo ''
+echo '🌐 LIVE: http://162.19.220.29:8080/'
+"""
+
+def run_cmd(cmd):
+    """Run OS command and return output"""
+    print(f"Running: {cmd}")
+    result = os.system(cmd)
+    if result != 0:
+        print(f"Command failed with code {result}")
+    return result
+
+def generate_sshpass_commands():
+    """Generate commands with sshpass for password auth"""
+    cmds = []
+    
+    # Upload files
+    for f in FILES:
+        if os.path.exists(f):
+            cmd = f'sshpass -p "{PASSWORD}" scp -o StrictHostKeyChecking=no {f} {USER}@{HOST}:{REMOTE_DIR}'
+            cmds.append(cmd)
+    
+    # Run deployment
+    cmd = f'sshpass -p "{PASSWORD}" ssh -o StrictHostKeyChecking=no {USER}@{HOST} "{DEPLOY_CMD}"'
+    cmds.append(cmd)
+    
+    return cmds
+
+def generate_expect_script():
+    """Generate expect script for password auth"""
+    script = f"""#!/usr/bin/expect -f
+spawn scp {" ".join(FILES)} {USER}@{HOST}:{REMOTE_DIR}
+expect "password:"
+send "{PASSWORD}\r"
+expect eof
+
+spawn ssh {USER}@{HOST} "{DEPLOY_CMD}"
+expect "password:"
+send "{PASSWORD}\r"
+expect eof
+"""
+    script_path = os.path.join(tempfile.gettempdir(), "deploy_expect.sh")
+    with open(script_path, "w") as f:
+        f.write(script)
+    os.chmod(script_path, 0o755)
+    return script_path
+
+def main():
+    print("╔════════════════════════════════════════════════════════════╗")
+    print("║  🚀 MORDZIX AI DEPLOYMENT - PYTHON SSH 🚀                ║")
+    print("╚════════════════════════════════════════════════════════════╝")
+    print()
+    
+    # Check files
+    print("📋 CHECKING FILES...")
+    missing = False
+    for f in FILES:
+        if os.path.exists(f):
+            size = os.path.getsize(f) / 1024
+            print(f"  ✅ {f} ({size:.1f} KB)")
+        else:
+            print(f"  ❌ {f} MISSING!")
+            missing = True
+    
+    if missing:
+        print("❌ Missing files! Aborting.")
+        return 1
+    
+    print()
+    print(f"🔐 CONNECTING TO {USER}@{HOST}...")
+    print()
+    
+    # Try different approaches based on OS
+    system = platform.system().lower()
+    
+    if system == "windows":
+        print("🖥️ Windows detected")
+        print("💡 Creating batch file with SSH commands...")
+        
+        bat_path = "deploy_temp.bat"
+        with open(bat_path, "w") as f:
+            f.write("@echo off\n")
+            f.write(f'echo Uploading files to {HOST}...\n')
+            
+            # SCP commands
+            for file in FILES:
+                f.write(f'echo Uploading {file}...\n')
+                f.write(f'scp -o StrictHostKeyChecking=no {file} {USER}@{HOST}:{REMOTE_DIR}\n')
+                f.write('if %errorlevel% neq 0 (\n')
+                f.write('  echo Error uploading file!\n')
+                f.write('  exit /b 1\n')
+                f.write(')\n\n')
+            
+            # SSH command
+            f.write(f'echo Running deployment on {HOST}...\n')
+            f.write(f'ssh -o StrictHostKeyChecking=no {USER}@{HOST} "{DEPLOY_CMD.replace("`", "\\`").replace("$", "\\$")}"\n')
+        
+        print(f"📜 Commands written to {bat_path}")
+        print("⚠️ Please run this batch file manually.")
+        print(f"   You'll need to enter password: {PASSWORD}")
+        print()
+        print("📋 OR copy-paste these commands:")
+        print()
+        
+        # Print commands for copy-paste
+        for file in FILES:
+            print(f'scp -o StrictHostKeyChecking=no {file} {USER}@{HOST}:{REMOTE_DIR}')
+        
+        print()
+        print(f'ssh -o StrictHostKeyChecking=no {USER}@{HOST} "cd /home/ubuntu/app && pkill -f python 2>/dev/null || true; sleep 2; nohup python3 app.py > /tmp/mordzix.log 2>&1 & sleep 3; curl -s http://localhost:8080/health; echo; tail -30 /tmp/mordzix.log; echo; echo http://{HOST}:8080/"')
+        
+        # Try to run it directly as well
+        print()
+        print("🔄 TRYING TO RUN DIRECTLY...")
+        
+        try:
+            # Direct execution attempt
+            for file in FILES:
+                cmd = f'scp -o StrictHostKeyChecking=no {file} {USER}@{HOST}:{REMOTE_DIR}'
+                print(f"Running: {cmd}")
+                subprocess.run(cmd, shell=True, check=False)
+                
+            cmd = f'ssh -o StrictHostKeyChecking=no {USER}@{HOST} "cd /home/ubuntu/app && pkill -f python 2>/dev/null || true; sleep 2; nohup python3 app.py > /tmp/mordzix.log 2>&1 & sleep 3; curl -s http://localhost:8080/health; echo; tail -30 /tmp/mordzix.log; echo; echo http://{HOST}:8080/"'
+            print(f"Running: {cmd}")
+            subprocess.run(cmd, shell=True, check=False)
+        except Exception as e:
+            print(f"Error during direct execution: {e}")
+            
+    elif system in ["linux", "darwin"]:  # Linux or Mac
+        if os.system("which sshpass >/dev/null 2>&1") == 0:
+            print("🔑 Using sshpass for authentication")
+            cmds = generate_sshpass_commands()
+            for cmd in cmds:
+                run_cmd(cmd)
+        elif os.system("which expect >/dev/null 2>&1") == 0:
+            print("🔑 Using expect script for authentication")
+            script_path = generate_expect_script()
+            run_cmd(script_path)
+        else:
+            print("⚠️ Neither sshpass nor expect found")
+            print("💡 Please install one of them:")
+            print("   - sudo apt-get install sshpass  # Ubuntu/Debian")
+            print("   - brew install hudochenkov/sshpass/sshpass  # macOS")
+            print("   - sudo yum install sshpass  # CentOS/RHEL")
+            return 1
+    else:
+        print(f"⚠️ Unsupported OS: {system}")
+        return 1
+    
+    print()
+    print("✅ DEPLOYMENT COMPLETE!")
+    print()
+    print(f"🌐 http://{HOST}:8080/")
+    print()
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

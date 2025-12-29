@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mordzix Chatbox</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 18px; }
+    #row { display: flex; gap: 10px; align-items: center; }
+    #token { width: 420px; }
+    #msg { flex: 1; }
+    button { padding: 10px 14px; }
+    #out { white-space: pre-wrap; border: 1px solid #ddd; padding: 12px; height: 60vh; overflow: auto; margin-top: 12px; }
+    #status { margin-top: 10px; font-size: 14px; opacity: .75; }
+    #dot { display:inline-block; width: 18px; text-align:center; }
+  </style>
+</head>
+<body>
+  <h2>Mordzix Chatbox (SSE POST stream)</h2>
+
+  <div id="row">
+    <input id="token" placeholder="AUTH_TOKEN" autocomplete="off" />
+    <input id="msg" placeholder="Wiadomość..." autocomplete="off" />
+    <button id="send">Wyślij</button>
+  </div>
+
+  <div id="status">Status: idle <span id="dot"></span></div>
+  <div id="out"></div>
+
+  <script>
+    const out = document.getElementById("out");
+    const statusEl = document.getElementById("status");
+    const dotEl = document.getElementById("dot");
+    const btn = document.getElementById("send");
+    const msg = document.getElementById("msg");
+    const token = document.getElementById("token");
+
+    let anim = null;
+    let phase = 0;
+
+    function setStatus(text, spinning) {
+      statusEl.textContent = "Status: " + text + " ";
+      statusEl.appendChild(dotEl);
+
+      if (!spinning) {
+        if (anim) clearInterval(anim);
+        anim = null;
+        dotEl.textContent = "";
+        return;
+      }
+      if (anim) return;
+      phase = 0;
+      anim = setInterval(() => {
+        phase = (phase + 1) % 4;
+        dotEl.textContent = ".".repeat(phase);
+      }, 250);
+    }
+
+    function scrollBottom() {
+      out.scrollTop = out.scrollHeight;
+    }
+
+    function appendText(t) {
+      out.textContent += t;
+      scrollBottom();
+    }
+
+    async function postStream() {
+      const t = token.value.trim();
+      const m = msg.value.trim();
+      if (!t || !m) return;
+
+      appendText("\n\n---\nUSER: " + m + "\nASSISTANT: ");
+      msg.value = "";
+
+      setStatus("generating", true);
+
+      const resp = await fetch("http://127.0.0.1:8080/api/chat/assistant/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + t
+        },
+        body: JSON.stringify({ message: m, user_id: "default" })
+      });
+
+      if (!resp.ok || !resp.body) {
+        setStatus("http error", false);
+        appendText("\n[HTTP ERROR] " + resp.status + " " + (await resp.text()));
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buf = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buf += decoder.decode(value, { stream: true });
+
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) !== -1) {
+          const chunk = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+
+          const lines = chunk.split("\n");
+          for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line.startsWith("data:")) continue;
+
+            const payload = line.slice(5).trim();
+            if (!payload) continue;
+
+            try {
+              const obj = JSON.parse(payload);
+              if (!obj || !obj.event) continue;
+
+              if (obj.event === "delta") {
+                appendText(String(obj.data || ""));
+              } else if (obj.event === "error") {
+                setStatus("error", false);
+                appendText("\n[ERROR] " + String(obj.data || ""));
+              } else if (obj.event === "done") {
+                setStatus("done", false);
+              }
+            } catch (e) {
+              // ignoruj
+            }
+          }
+        }
+      }
+
+      setStatus("done", false);
+    }
+
+    btn.addEventListener("click", postStream);
+    msg.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") postStream();
+    });
+
+    setStatus("idle", false);
+  </script>
+</body>
+</html>
