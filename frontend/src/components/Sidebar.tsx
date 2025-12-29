@@ -9,7 +9,13 @@ async function fetchSessions(): Promise<SessionSummary[]> {
   return data.sessions || [];
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isDesktop: boolean;
+}
+
+export default function Sidebar({ isOpen, onClose, isDesktop }: SidebarProps) {
   const navigate = useNavigate();
   const { sessionId } = useParams();
   const queryClient = useQueryClient();
@@ -26,23 +32,44 @@ export default function Sidebar() {
   const handleNew = () => {
     setCurrentSession(undefined);
     navigate('/app/chat');
+    if (!isDesktop) onClose();
   };
 
   const handleRefresh = () => queryClient.invalidateQueries({ queryKey: ['sessions'] });
 
+  if (!isDesktop && !isOpen) {
+    return null;
+  }
+
   return (
-    <aside className="w-72 bg-panel border-r border-subtle/60 flex flex-col">
+    <aside
+      className={
+        isDesktop
+          ? 'w-72 bg-panel border-r border-subtle/60 flex flex-col'
+          : 'fixed inset-y-0 left-0 w-72 bg-panel border-r border-subtle/60 flex flex-col z-40 shadow-xl'
+      }
+    >
       <div className="p-4 flex items-center justify-between border-b border-subtle/60">
         <div>
           <p className="text-sm text-gray-400">MRD Console</p>
           <p className="text-lg font-semibold">Sesje</p>
         </div>
-        <button
-          onClick={handleRefresh}
-          className="text-xs text-gray-300 hover:text-white border border-subtle px-2 py-1 rounded"
-        >
-          Odśwież
-        </button>
+        <div className="flex items-center gap-2">
+          {!isDesktop && (
+            <button
+              onClick={onClose}
+              className="text-xs text-gray-300 hover:text-white border border-subtle px-2 py-1 rounded"
+            >
+              Zamknij
+            </button>
+          )}
+          <button
+            onClick={handleRefresh}
+            className="text-xs text-gray-300 hover:text-white border border-subtle px-2 py-1 rounded"
+          >
+            Odśwież
+          </button>
+        </div>
       </div>
       <div className="p-3 flex gap-2">
         <button
@@ -68,6 +95,7 @@ export default function Sidebar() {
                   onClick={() => {
                     setCurrentSession(s.id);
                     navigate(`/app/chat/${s.id}`);
+                    if (!isDesktop) onClose();
                   }}
                   className={`w-full text-left px-3 py-2 rounded-md border border-transparent hover:border-subtle/80 hover:bg-subtle/60 ${
                     active ? 'bg-subtle border-subtle/80' : ''

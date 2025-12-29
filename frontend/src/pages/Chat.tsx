@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { streamChat, SSEEvent } from '../api/sse';
 import { AttachmentRef, ChatRequest, ChatResponse, SessionDetail, UploadResponse } from '../api/types';
 import MessageList, { Message } from '../components/MessageList';
 import Composer from '../components/Composer';
-import RightPanel from '../components/RightPanel';
 import { useSessionStore } from '../store/sessions';
 import { useAuthStore } from '../store/auth';
 import { useSettingsStore } from '../store/settings';
@@ -38,6 +37,11 @@ async function uploadFile(files: FileList, base: string, token: string): Promise
 export default function ChatPage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { panelOpen, isDesktop, openPanel } = useOutletContext<{
+    panelOpen: boolean;
+    isDesktop: boolean;
+    openPanel: () => void;
+  }>();
   const queryClient = useQueryClient();
   const { currentSessionId, setCurrentSession, drafts, setDraft, clearDraft } = useSessionStore();
   const token = useAuthStore((s) => s.token);
@@ -197,9 +201,9 @@ export default function ChatPage() {
   const messagesWithAttachments = useMemo(() => messages, [messages]);
 
   return (
-    <div className="flex flex-1 h-full">
-      <div className="flex-1 flex flex-col gap-4 p-6 overflow-hidden">
-        <div className="flex items-center justify-between gap-4">
+    <div className="flex flex-1 h-full flex-col lg:flex-row">
+      <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 overflow-hidden">
+        <div className="flex items-start flex-wrap justify-between gap-4">
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400">/api/chat/assistant{streamEnabled ? '/stream' : ''}</p>
             <h1 className="text-2xl font-bold mb-2">Czat</h1>
@@ -234,6 +238,14 @@ export default function ChatPage() {
                 Zatrzymaj
               </button>
             )}
+            {!panelOpen && (
+              <button
+                onClick={openPanel}
+                className="text-sm border border-subtle px-3 py-1 rounded hover:bg-subtle/60"
+              >
+                Panel PRO
+              </button>
+            )}
           </div>
         </div>
         <MessageList messages={messagesWithAttachments} onCopy={(txt) => navigator.clipboard.writeText(txt)} />
@@ -251,7 +263,6 @@ export default function ChatPage() {
           onRemoveAttachment={(id) => setAttachments((prev) => prev.filter((a) => a.id !== id))}
         />
       </div>
-      <RightPanel />
     </div>
   );
 }
