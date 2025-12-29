@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mordzix AI - Production</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: #111;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #ff6600;
+        }
+        
+        .status {
+            font-size: 12px;
+            color: #0f0;
+            margin-top: 5px;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #0a0a0a;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+        
+        .message.user {
+            background: #1a1a2e;
+            border-left: 3px solid #ff6600;
+        }
+        
+        .message.assistant {
+            background: #0f3460;
+            border-left: 3px solid #00d9ff;
+        }
+        
+        .message.error {
+            background: #3d0000;
+            border-left: 3px solid #ff0000;
+        }
+        
+        .message-label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .user .message-label { color: #ff6600; }
+        .assistant .message-label { color: #00d9ff; }
+        .error .message-label { color: #ff0000; }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            background: #111;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 15px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        #messageInput:focus {
+            border-color: #ff6600;
+        }
+        
+        button {
+            padding: 15px 30px;
+            background: #ff6600;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #ff8833;
+        }
+        
+        button:disabled {
+            background: #333;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #333;
+            border-top-color: #ff6600;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Mordzix AI</h1>
+        <div class="status">✓ System Online</div>
+    </div>
+    
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="message assistant">
+                <div class="message-label">Mordzix AI</div>
+                <div>Cześć! Jestem gotowy do rozmowy. Zadaj mi pytanie lub powiedz o czym chcesz porozmawiać.</div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Wpisz wiadomość..."
+                autocomplete="off"
+            />
+            <button id="sendBtn">Wyślij</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const AUTH_TOKEN = 'ssjjMijaja6969';
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        let isLoading = false;
+        
+        function addMessage(role, content) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            
+            const label = document.createElement('div');
+            label.className = 'message-label';
+            label.textContent = role === 'user' ? 'Ty' : 'Mordzix AI';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = content;
+            
+            msgDiv.appendChild(label);
+            msgDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function addError(message) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message error';
+            
+            const label = document.createElement('div');
+            label.className = 'message-label';
+            label.textContent = 'Błąd';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = message;
+            
+            msgDiv.appendChild(label);
+            msgDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.id = 'loading';
+            loadingDiv.innerHTML = '<div class="spinner"></div> Mordzix myśli...';
+            messagesDiv.appendChild(loadingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function hideLoading() {
+            const loadingDiv = document.getElementById('loading');
+            if (loadingDiv) loadingDiv.remove();
+        }
+        
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || isLoading) return;
+            
+            addMessage('user', message);
+            messageInput.value = '';
+            
+            isLoading = true;
+            sendBtn.disabled = true;
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_URL}/api/chat/assistant`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AUTH_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: message }],
+                        user_id: 'web_user',
+                        use_memory: true,
+                        auto_learn: true
+                    })
+                });
+                
+                hideLoading();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.ok && data.answer) {
+                    addMessage('assistant', data.answer);
+                } else {
+                    addError('Brak odpowiedzi od serwera');
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error('Error:', error);
+                addError(`Błąd połączenia: ${error.message}`);
+            } finally {
+                isLoading = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+        
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        messageInput.focus();
+    </script>
+</body>
+</html>

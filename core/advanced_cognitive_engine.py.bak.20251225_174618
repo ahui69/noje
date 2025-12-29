@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+advanced_cognitive_engine.py — stabilny silnik "Chat (Advanced)".
+
+Cel:
+- Zero SyntaxError, zero import-kill.
+- Async API pod endpoint.
+- Fallbacki gdy brakuje modułów (inner_language / hierarchical_memory / compressor).
+"""
+
+from __future__ import annotations
+from enum import Enum
+
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Callable, Union
+from datetime import datetime
+import traceback
+
+
+
+class CognitiveMode(str, Enum):
+    """Tryb pracy silnika/endpointu (stabilny kontrakt importów)."""
+    AUTO = "auto"
+    STANDARD = "standard"
+    ADVANCED = "advanced"
+    ANALYTICAL = "analytical"
+    CREATIVE = "creative"
+    FAST = "fast"
+
+DEFAULT_COGNITIVE_MODE = CognitiveMode.AUTO
+
+def parse_cognitive_mode(value: object, default: CognitiveMode = DEFAULT_COGNITIVE_MODE) -> CognitiveMode:
+    """
+    Bezpieczna normalizacja trybu z requestów/env/JSON.
+    Akceptuje: None/bool/str/Enum.
+    - None -> default
+    - True -> ADVANCED
+    - False -> STANDARD
+    - str -> dopasowanie po nazwie lub wartości (case-insensitive)
+    - CognitiveMode -> as-is
+    """
+    if value is None:
+        return default
+    if isinstance(value, CognitiveMode):
+        return value
+    if isinstance(value, bool):
+        return CognitiveMode.ADVANCED if value else CognitiveMode.STANDARD
+    if isinstance(value, (int, float)):
+        return CognitiveMode.ADVANCED if value else CognitiveMode.STANDARD
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if not v:
+            return default
+        # po wartości
+        for m in CognitiveMode:
+            if v == m.value:
+                return m
+        # po nazwie
+        for m in CognitiveMode:
+            if v == m.name.lower():
+                return m
+        # aliasy
+        aliases = {
+            "default": CognitiveMode.STANDARD,
+            "normal": CognitiveMode.STANDARD,
+            "std": CognitiveMode.STANDARD,
+            "pro": CognitiveMode.ADVANCED,
+            "adv": CognitiveMode.ADVANCED,
+            "analysis": CognitiveMode.ANALYTICAL,
+            "analytic": CognitiveMode.ANALYTICAL,
+            "creative": CognitiveMode.CREATIVE,
+            "fast": CognitiveMode.FAST,
+            "auto": CognitiveMode.AUTO,
+        }
+        return aliases.get(v, default)
+    return default
+
+def _safe_str(x: Any) -> str:
+    try:
+        return str(x)
+    except Exception:
+        return "<unprintable>"
+
+
+def _now_iso() -> str:
+    return datetime.utcnow().isoformat() + "Z"
+
+
+@dataclass
+class AdvancedCognitiveResult:
+    response: str
+    metadata: Dict[str, Any]
+    analysis: Dict[str, Any]
+    memory: List[Dict[str, Any]]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "response": self.response,
+            "metadata": self.metadata,
+            "analysis": self.analysis,
+            "memory": self.memory,
+        }
+
+
+class AdvancedCognitiveEngine:
+    """
+    Minimalnie-rozsądny silnik, który:
+    - analizuje input (intencja, entity-like, sentyment prosto),
+    - opcjonalnie odpala inner_language,
+    - opcjonalnie szuka w hierarchical_memory,
+    - składa odpowiedź (lub zostawia to routerowi).
+    """
+
+    def __init__(
+        self,
+        hierarchical_memory: Any = None,
+        inner_language: Any = None,
+        knowledge_compressor: Any = None,
+        llm_call: Optional[Callable[..., Any]] = None,
+        logger: Optional[Callable[[str], None]] = None,
+    ) -> None:
+        self.hierarchical_memory = hierarchical_memory
+        self.inner_language = inner_language
+        self.knowledge_compressor = knowledge_compressor
+        self.llm_call = llm_call
+        self._log = logger or (lambda msg: None)
+
+    async def process(
+        self,
+        user_message: str,
+        conversation_context: Optional[List[Dict[str, Any]]] = None,
+        user_id: Optional[str] = None,
+    ) -> AdvancedCognitiveResult:
+        t0 = datetime.utcnow()
+
+        analysis: Dict[str, Any] = {
+            "intent": "question" if "?" in (user_message or "") else "statement",
+            "tokens": (user_message or "").split(),
+            "entities": [],
+            "sentiment": "neutral",
+        }
+
+        # 1) Inner language (opcjonalnie)
+        inner_out: Optional[Dict[str, Any]] = None
+        try:
+            inner_out = await self._process_inner_language(user_message, conversation_context or [])
+            if isinstance(inner_out, dict):
+                # delikatnie merge
+                analysis.update({k: inner_out.get(k) for k in ("analyzed_intent", "entities", "sentiment") if k in inner_out})
+                analysis["inner_language"] = inner_out
+        except Exception as e:
+            self._log(f"[ADV_ENGINE] inner_language failed: {_safe_str(e)}")
+            analysis["inner_language_error"] = _safe_str(e)
+
+        # 2) Memory search (opcjonalnie)
+        memory_items: List[Dict[str, Any]] = []
+        try:
+            memory_items = await self.search_memory(user_message, user_id=user_id, limit=10)
+        except Exception as e:
+            self._log(f"[ADV_ENGINE] memory search failed: {_safe_str(e)}")
+            analysis["memory_error"] = _safe_str(e)
+
+        # 3) Odpowiedź: jeśli jest llm_call, można złożyć odpowiedź. Jeśli nie, dajemy sensowny fallback.
+        response_text = ""
+        meta: Dict[str, Any] = {
+            "ts": _now_iso(),
+            "engine": "advanced",
+            "dur_ms": int((datetime.utcnow() - t0).total_seconds() * 1000),
+        }
+
+        if self.llm_call:
+            try:
+                system = "Jesteś zaawansowanym asystentem. Odpowiadasz konkretnie, po polsku, bez lania wody."
+                ctx_lines: List[str] = []
+                if memory_items:
+                    ctx_lines.append("[Pamięć]")
+                    for it in memory_items[:5]:
+                        txt = it.get("text") or it.get("content") or it.get("summary") or ""
+                        if txt:
+                            ctx_lines.append(f"- {txt[:400]}")
+                if conversation_context:
+                    ctx_lines.append("[Kontekst rozmowy - ostatnie 3]")
+                    for m in conversation_context[-3:]:
+                        role = m.get("role", "user")
+                        content = (m.get("content") or "")[:800]
+                        ctx_lines.append(f"{role}: {content}")
+
+                user = (user_message or "").strip()
+                prompt = "\n".join(ctx_lines + ["", "Użytkownik:", user]).strip()
+
+                out = self.llm_call(
+                    [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": prompt},
+                    ]
+                )
+                # llm_call może być sync albo async
+                if hasattr(out, "__await__"):
+                    out = await out  # type: ignore[misc]
+
+                response_text = (out or "").strip()
+                if not response_text:
+                    response_text = user
+            except Exception as e:
+                meta["llm_error"] = _safe_str(e)
+                meta["llm_trace"] = traceback.format_exc(limit=3)
+                response_text = (user_message or "").strip()
+        else:
+            # fallback: zwracamy wejście; endpoint zwykle i tak opakuje to w swój format
+            response_text = (user_message or "").strip()
+
+        if not response_text:
+            response_text = "OK"
+
+        meta["dur_ms"] = int((datetime.utcnow() - t0).total_seconds() * 1000)
+
+        return AdvancedCognitiveResult(
+            response=response_text,
+            metadata=meta,
+            analysis=analysis,
+            memory=memory_items,
+        )
+
+    async def _process_inner_language(
+        self,
+        user_message: str,
+        conversation_context: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        context_data = {
+            "conversation_length": len(conversation_context) if conversation_context else 0,
+            "recent_topics": [(m.get("content") or "")[:100] for m in (conversation_context or [])[-3:]],
+            "message_type": "question" if "?" in (user_message or "") else "statement",
+        }
+
+        if self.inner_language:
+            out = self.inner_language.process_natural_language_input(user_message, context_data)
+            if hasattr(out, "__await__"):
+                out = await out  # type: ignore[misc]
+            if isinstance(out, dict):
+                return out
+
+        # Basic fallback
+        return {
+            "analyzed_intent": "general_query",
+            "tokens": (user_message or "").split(),
+            "sentiment": "neutral",
+            "entities": [],
+        }
+
+    async def search_memory(
+        self,
+        query: str,
+        user_id: Optional[str] = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        q = (query or "").strip()
+        if not q:
+            return []
+
+        # Prefer hierarchical memory if it has search_hybrid
+        hm = self.hierarchical_memory
+        if hm and hasattr(hm, "search_hybrid"):
+            out = hm.search_hybrid(query=q, user_id=user_id, max_results=limit)
+            if hasattr(out, "__await__"):
+                out = await out  # type: ignore[misc]
+            if isinstance(out, list):
+                return [x if isinstance(x, dict) else {"text": _safe_str(x)} for x in out]
+
+        # Fallback: try core.memory.ltm_search_hybrid (sync)
+        try:
+            from .memory import ltm_search_hybrid  # type: ignore
+            out2 = ltm_search_hybrid(q, limit=limit)
+            if isinstance(out2, list):
+                return [x if isinstance(x, dict) else {"text": _safe_str(x)} for x in out2]
+        except Exception:
+            pass
+
+        return []
+
+
+_DEFAULT_ENGINE: Optional[AdvancedCognitiveEngine] = None
+
+
+def get_engine() -> AdvancedCognitiveEngine:
+    global _DEFAULT_ENGINE
+    if _DEFAULT_ENGINE is None:
+        _DEFAULT_ENGINE = AdvancedCognitiveEngine()
+    return _DEFAULT_ENGINE
+
+
+def get_advanced_cognitive_engine() -> AdvancedCognitiveEngine:
+    """
+    Zgodność wsteczna dla routerów/importów.
+    Zwraca singleton AdvancedCognitiveEngine (to samo co get_engine()).
+    """
+    return get_engine()
+
+
+
+# Backward-compatible alias required by routers/imports
+get_advanced_cognitive_engine = get_engine
+

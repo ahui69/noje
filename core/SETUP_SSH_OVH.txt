@@ -1,0 +1,153 @@
+################################################################################
+# 🔑 KONFIGURACJA SSH DLA OVH - KROK PO KROKU
+# Email: gajewa2014@gmail.com
+# Serwer: ubuntu@51.83.131.142
+################################################################################
+
+=== KROK 1: WYGENERUJ KLUCZ SSH (Windows PowerShell) ===
+
+# Utwórz folder .ssh jeśli nie istnieje
+mkdir C:\Users\48501\.ssh -ErrorAction SilentlyContinue
+
+# Generuj klucz SSH
+ssh-keygen -t ed25519 -C "gajewa2014@gmail.com" -f C:\Users\48501\.ssh\id_ed25519_ovh
+
+# Naciśnij Enter 3x (bez hasła dla wygody, lub ustaw hasło jeśli wolisz)
+
+
+=== KROK 2: WYŚWIETL KLUCZ PUBLICZNY ===
+
+# Pokaż klucz publiczny (do wklejenia na serwer)
+Get-Content C:\Users\48501\.ssh\id_ed25519_ovh.pub
+
+# SKOPIUJ CAŁY WYŚWIETLONY TEKST (zaczyna się od "ssh-ed25519...")
+
+
+=== KROK 3A: DODAJ KLUCZ PRZEZ PANEL OVH (REINSTALACJA) ===
+
+1. Idź na: https://www.ovh.com/manager/
+2. Zaloguj się: gajewa2014@gmail.com
+3. Wybierz VPS: vps-a3f42e4f (51.83.131.142)
+4. Kliknij: "Reinstall"
+5. Wybierz OS: Ubuntu 24.04 LTS (Noble Numbat)
+6. W sekcji SSH Keys → "Add SSH Key"
+7. Nazwa: "mordzix-key"
+8. Wklej klucz publiczny (z kroku 2)
+9. Potwierdź reinstalację
+10. Czekaj 5-10 minut
+
+
+=== KROK 3B: DODAJ KLUCZ BEZ REINSTALACJI (jeśli masz dostęp) ===
+
+# Jeśli masz jeszcze dostęp SSH z hasłem:
+ssh ubuntu@51.83.131.142
+
+# Na serwerze wykonaj:
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Wklej klucz publiczny (ZASTĄP tym co skopiowałeś w kroku 2):
+echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... gajewa2014@gmail.com" >> ~/.ssh/authorized_keys
+
+chmod 600 ~/.ssh/authorized_keys
+
+# Restart SSH (opcjonalnie):
+sudo systemctl restart ssh
+
+exit
+
+
+=== KROK 4: TESTUJ POŁĄCZENIE ===
+
+# Z Windows PowerShell - połącz się kluczem:
+ssh -i C:\Users\48501\.ssh\id_ed25519_ovh ubuntu@51.83.131.142
+
+# Jeśli działa, zobaczysz:
+# ubuntu@vps-a3f42e4f:~$
+
+
+=== KROK 5: KONFIGURACJA SSH CONFIG (opcjonalnie - dla wygody) ===
+
+# Utwórz plik config:
+@"
+Host ovh-mordzix
+    HostName 51.83.131.142
+    User ubuntu
+    IdentityFile C:\Users\48501\.ssh\id_ed25519_ovh
+    ServerAliveInterval 60
+"@ | Out-File -FilePath C:\Users\48501\.ssh\config -Encoding UTF8
+
+# Teraz możesz łączyć się prostą komendą:
+ssh ovh-mordzix
+
+
+=== KROK 6: PRZEŚLIJ PROJEKT NA SERWER ===
+
+# Utwórz workspace na serwerze:
+ssh ovh-mordzix
+sudo mkdir -p /workspace/mrd
+sudo chown -R ubuntu:ubuntu /workspace
+exit
+
+# Prześlij pliki (z Windows):
+scp -i C:\Users\48501\.ssh\id_ed25519_ovh -r C:\Users\48501\Desktop\mrd\* ubuntu@51.83.131.142:/workspace/mrd/
+
+# LUB z config (krócej):
+scp -r C:\Users\48501\Desktop\mrd\* ovh-mordzix:/workspace/mrd/
+
+
+=== KROK 7: URUCHOM APLIKACJĘ ===
+
+ssh ovh-mordzix
+cd /workspace/mrd
+chmod +x start_production.sh
+sudo ./start_production.sh
+
+
+=== TROUBLESHOOTING ===
+
+Problem: "Permission denied (publickey)"
+Rozwiązanie:
+1. Sprawdź uprawnienia klucza: icacls C:\Users\48501\.ssh\id_ed25519_ovh
+2. Użyj pełnej ścieżki: ssh -i C:\Users\48501\.ssh\id_ed25519_ovh ubuntu@51.83.131.142
+3. Debug SSH: ssh -vvv -i C:\Users\48501\.ssh\id_ed25519_ovh ubuntu@51.83.131.142
+
+Problem: Klucz nie działa
+Rozwiązanie:
+1. Reinstall VPS przez panel OVH z kluczem SSH
+2. Lub użyj metody 3B (dodaj klucz manualnie)
+
+Problem: Brak dostępu do serwera
+Rozwiązanie:
+1. Panel OVH → VPS → KVM/IPMI (konsola)
+2. Zaloguj się jako ubuntu/root
+3. Dodaj klucz manualnie (krok 3B)
+
+
+=== SZYBKIE KOMENDY ===
+
+# Generuj klucz:
+ssh-keygen -t ed25519 -C "gajewa2014@gmail.com" -f C:\Users\48501\.ssh\id_ed25519_ovh
+
+# Pokaż klucz publiczny:
+Get-Content C:\Users\48501\.ssh\id_ed25519_ovh.pub
+
+# Połącz się:
+ssh -i C:\Users\48501\.ssh\id_ed25519_ovh ubuntu@51.83.131.142
+
+# Prześlij pliki:
+scp -i C:\Users\48501\.ssh\id_ed25519_ovh -r C:\Users\48501\Desktop\mrd\* ubuntu@51.83.131.142:/workspace/mrd/
+
+
+################################################################################
+# ✅ GOTOWE!
+################################################################################
+
+Po skonfigurowaniu SSH będziesz mógł łączyć się bez hasła:
+ssh ovh-mordzix
+
+Następnie uruchom skrypt produkcyjny:
+cd /workspace/mrd && sudo ./start_production.sh
+
+Aplikacja będzie dostępna na:
+https://mordxixai.xyz/

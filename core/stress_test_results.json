@@ -1,0 +1,42 @@
+{
+  "memory_ops": {
+    "iterations": 1000,
+    "duration": 22.03294539451599,
+    "ops_per_sec": 45.38657823973459,
+    "errors": 0,
+    "success_rate": 100.0
+  },
+  "cognitive_ops": {
+    "iterations": 300,
+    "duration": 0.011895895004272461,
+    "ops_per_sec": 25218.783445234993,
+    "errors": 0,
+    "success_rate": 100.0
+  },
+  "autonauka_ops": {
+    "iterations": 20,
+    "duration": 0.0012061595916748047,
+    "ops_per_sec": 16581.553666732554,
+    "errors": 0,
+    "success_rate": 100.0
+  },
+  "concurrent_ops": {
+    "threads": 15,
+    "duration": 20.455872058868408,
+    "total_operations": 1329,
+    "ops_per_sec": 64.96911968237636,
+    "errors": 711,
+    "success_rate": 46.50112866817156
+  },
+  "errors": [],
+  "performance": {},
+  "start_time": 1760558826.5203722,
+  "database": {
+    "size_mb": 1.8203125,
+    "accessible": true
+  },
+  "ram_usage": {
+    "memory_mb": 69.44140625,
+    "memory_percent": 0.43260451425256297
+  }
+}
