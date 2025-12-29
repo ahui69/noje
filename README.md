@@ -11,6 +11,7 @@
 
 ### Szybki start (backend + build frontendu)
 - Uruchom: `./start.sh` (tworzy `.venv`, instaluje zależności Pythona, buduje frontend Vite, startuje uvicorn na porcie 8080).
+- Skrypt budując frontend ustawia `VITE_API_BASE=http://$HOST:$PORT`, więc UI i API domyślnie działają na tym samym porcie.
 - Opcjonalne zmienne: `PORT` (domyślnie 8080), `HOST` (domyślnie 0.0.0.0), `SKIP_FRONTEND=1` (pomija budowę frontu, wymaga gotowego `frontend/dist`).
 
 ## Nowy frontend (React + Vite)
