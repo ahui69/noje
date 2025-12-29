@@ -1,0 +1,346 @@
+[CONFIG] No .env file found at /workspace/noje/.env
+
+======================================================================
+📡 LOADING ENDPOINTS
+======================================================================
+✅ Chat (Commercial)             
+[CONFIG] No .env file found at /workspace/noje/.env
+[WARN] AUTH_TOKEN not set in .env - using default (INSECURE!)
+[ERROR] LLM_API_KEY not set in .env! Get your key from https://deepinfra.com
+[ERROR] Application will not work without LLM API key!
+[WARN] Using default Mordzix persona
+[INFO][LLM] [LLM] Redis cache available
+[INFO][MEMORY] Unified Memory System module loaded
+[INFO][MEMORY_DB] FTS5 full-text search enabled
+[INFO][MEMORY_DB] Memory database initialized successfully
+[INFO][MEMORY_CACHE] Redis cache layer enabled
+[INFO][MEMORY] Unified Memory System initialized
+[INFO][MEMORY] Cleaned up 0 old memories
+[INFO][MEMORY] Background tasks started
+[INFO][MEMORY] Consolidation complete: {'episodes_processed': 0, 'facts_created': 0, 'models_updated': 0}
+[INFO][HIER_MEM] HierarchicalMemorySystem init OK
+[INFO] [COGNITIVE_ENGINE] ✅ Hierarchical Memory System loaded
+[OK] ✅ Hierarchical Memory integrated with Research Module!
+[INFO] [COGNITIVE_ENGINE] ✅ Fast Path Handlers loaded
+[INFO] [COGNITIVE_ENGINE] ✅ Web Research System loaded
+[INFO] [COGNITIVE_ENGINE] ✅ Legacy Systems loaded for fallback
+[INFO] [COGNITIVE_ENGINE] Zaawansowany silnik kognitywny zainicjalizowany
+✅ Chat (Legacy Cognitive)       
+✅ STT (Speech-to-Text)          
+✅ TTS (Text-to-Speech)          
+Analiza semantyczna - inicjalizacja powiodła się
+Analiza semantyczna - inicjalizacja powiodła się
+Analiza semantyczna - inicjalizacja powiodła się
+[INFO][SEMANTIC] Semantic module initialized
+✅ Suggestions                   
+✅ Internal                      
+✅ Files (Advanced)              
+✅ Research (Legacy)             
+✅ Metrics (Legacy)              
+✅ Code Assistant                
+[INFO] [NLP_ENDPOINT] Zarejestrowano endpointy NLP: /api/nlp/*
+✅ NLP                           
+✅ Travel                        
+✅ Writing                       
+✅ Psyche                        
+✅ Writer Pro                    
+✅ Admin/Debug                   
+✅ Chat (Advanced) [core]        
+✅ Memory [core]                 
+✅ Cognitive [core]              
+✅ Negotiator [core]             
+✅ Reflection [core]             
+✅ Legal Office [core]           
+✅ Hybrid Search [core]          
+✅ Batch Processing [core]       
+✅ Metrics [core]                
+✅ Suggestions [core]            
+✅ Research [core]               
+✅ Admin [core]                  
+✅ Hacker Assistant [core]       
+✅ Psyche [core]                 
+✅ Chat Advanced Compat [core]   
+✅ Auction [core]                
+======================================================================
+✅ Loaded routers: 32
+⛔ Failed routers: 0
+======================================================================
+
+[CONFIG] No .env file found at /workspace/noje/.env
+
+======================================================================
+📡 LOADING ENDPOINTS
+======================================================================
+✅ Chat (Commercial)             
+✅ Chat (Legacy Cognitive)       
+✅ STT (Speech-to-Text)          
+✅ TTS (Text-to-Speech)          
+✅ Suggestions                   
+✅ Internal                      
+✅ Files (Advanced)              
+✅ Research (Legacy)             
+✅ Metrics (Legacy)              
+✅ Code Assistant                
+✅ NLP                           
+✅ Travel                        
+✅ Writing                       
+✅ Psyche                        
+✅ Writer Pro                    
+✅ Admin/Debug                   
+✅ Chat (Advanced) [core]        
+✅ Memory [core]                 
+✅ Cognitive [core]              
+✅ Negotiator [core]             
+✅ Reflection [core]             
+✅ Legal Office [core]           
+✅ Hybrid Search [core]          
+✅ Batch Processing [core]       
+✅ Metrics [core]                
+✅ Suggestions [core]            
+✅ Research [core]               
+✅ Admin [core]                  
+✅ Hacker Assistant [core]       
+✅ Psyche [core]                 
+✅ Chat Advanced Compat [core]   
+✅ Auction [core]                
+======================================================================
+✅ Loaded routers: 32
+⛔ Failed routers: 0
+======================================================================
+
+=== ROUTER LOAD STATUS ===
+Loaded routers: 32
+   1. assistant_simple — Chat (Commercial)
+   2. assistant_endpoint — Chat (Legacy Cognitive)
+   3. stt_endpoint — STT (Speech-to-Text)
+   4. tts_endpoint — TTS (Text-to-Speech)
+   5. suggestions_endpoint — Suggestions
+   6. internal_endpoint — Internal
+   7. files_endpoint — Files (Advanced)
+   8. research_endpoint — Research (Legacy)
+   9. prometheus_endpoint — Metrics (Legacy)
+  10. programista_endpoint — Code Assistant
+  11. nlp_endpoint — NLP
+  12. travel_endpoint — Travel
+  13. writing_endpoint — Writing
+  14. psyche_endpoint — Psyche
+  15. writer_pro — Writer Pro
+  16. routers — Admin/Debug
+  17. core.assistant_endpoint — Chat (Advanced) [core]
+  18. core.memory_endpoint — Memory [core]
+  19. core.cognitive_endpoint — Cognitive [core]
+  20. core.negocjator_endpoint — Negotiator [core]
+  21. core.reflection_endpoint — Reflection [core]
+  22. core.legal_office_endpoint — Legal Office [core]
+  23. core.hybrid_search_endpoint — Hybrid Search [core]
+  24. core.batch_endpoint — Batch Processing [core]
+  25. core.prometheus_endpoint — Metrics [core]
+  26. core.suggestions_endpoint — Suggestions [core]
+  27. core.research_endpoint — Research [core]
+  28. core.admin_endpoint — Admin [core]
+  29. core.hacker_endpoint — Hacker Assistant [core]
+  30. core.psyche_endpoint — Psyche [core]
+  31. core.chat_advanced_endpoint — Chat Advanced Compat [core]
+  32. core.auction_endpoint — Auction [core]
+Failed routers: 0
+
+=== FASTAPI ROUTES RUNTIME DUMP ===
+
+  1. GET          /v1/models                               openai_compat:list_models [OPEN]
+  2. POST         /v1/chat/completions                     openai_compat:chat_completions [OPEN]
+  3. GET          /health                                  app:health [OPEN]
+  4. POST         /api/chat/assistant                      assistant_simple:chat_assistant [OPEN]
+  5. POST         /api/chat/assistant/stream               assistant_simple:chat_assistant_stream [OPEN]
+  6. POST         /api/chat/assistant                      assistant_endpoint:chat_assistant [OPEN]
+  7. POST         /api/chat/assistant/stream               assistant_endpoint:chat_assistant_stream [OPEN]
+  8. POST         /api/chat/auto                           assistant_endpoint:force_auto_learn [OPEN]
+  9. POST         /api/stt/transcribe                      stt_endpoint:transcribe_audio [OPEN]
+ 10. GET          /api/stt/providers                       stt_endpoint:list_stt_providers [OPEN]
+ 11. GET          /api/tts/voices                          tts_endpoint:list_voices [OPEN]
+ 12. POST         /api/tts/speak                           tts_endpoint:speak [OPEN]
+ 13. GET          /api/tts/status                          tts_endpoint:status [OPEN]
+ 14. POST         /api/suggestions/generate                suggestions_endpoint:generate_suggestions [OPEN]
+ 15. POST         /api/suggestions/inject                  suggestions_endpoint:inject_suggestions [OPEN]
+ 16. GET          /api/suggestions/stats                   suggestions_endpoint:get_stats [OPEN]
+ 17. POST         /api/suggestions/analyze                 suggestions_endpoint:analyze_message [OPEN]
+ 18. GET          /api/internal/ui_token                   internal_endpoint:ui_token [OPEN]
+ 19. POST         /api/files/upload                        files_endpoint:upload_file [OPEN]
+ 20. POST         /api/files/upload/base64                 files_endpoint:upload_base64 [OPEN]
+ 21. GET          /api/files/list                          files_endpoint:list_files [OPEN]
+ 22. GET          /api/files/download                      files_endpoint:download_file [OPEN]
+ 23. POST         /api/files/analyze                       files_endpoint:analyze_file [OPEN]
+ 24. POST         /api/files/delete                        files_endpoint:delete_file [OPEN]
+ 25. GET          /api/files/stats                         files_endpoint:files_stats [OPEN]
+ 26. POST         /api/files/batch/analyze                 files_endpoint:batch_analyze [OPEN]
+ 27. POST         /api/research/search                     research_endpoint:web_search [OPEN]
+ 28. POST         /api/research/autonauka                  research_endpoint:run_autonauka [OPEN]
+ 29. GET          /api/research/sources                    research_endpoint:available_sources [OPEN]
+ 30. GET          /api/research/test                       research_endpoint:test_research [OPEN]
+ 31. GET          /metrics                                 prometheus_endpoint:get_prometheus_metrics [OPEN]
+ 32. GET          /health                                  prometheus_endpoint:health_check [OPEN]
+ 33. GET          /stats                                   prometheus_endpoint:get_stats [OPEN]
+ 34. GET          /api/code/snapshot                       programista_endpoint:snapshot [OPEN]
+ 35. POST         /api/code/exec                           programista_endpoint:exec_command [OPEN]
+ 36. POST         /api/code/write                          programista_endpoint:write_file [OPEN]
+ 37. GET          /api/code/read                           programista_endpoint:read_file [OPEN]
+ 38. GET          /api/code/tree                           programista_endpoint:read_tree [OPEN]
+ 39. POST         /api/code/init                           programista_endpoint:project_init [OPEN]
+ 40. POST         /api/code/plan                           programista_endpoint:plan [OPEN]
+ 41. POST         /api/code/lint                           programista_endpoint:lint [OPEN]
+ 42. POST         /api/code/test                           programista_endpoint:test [OPEN]
+ 43. POST         /api/code/format                         programista_endpoint:format_code [OPEN]
+ 44. POST         /api/code/git                            programista_endpoint:git [OPEN]
+ 45. POST         /api/code/docker/build                   programista_endpoint:docker_build [OPEN]
+ 46. POST         /api/code/docker/run                     programista_endpoint:docker_run [OPEN]
+ 47. POST         /api/code/deps/install                   programista_endpoint:deps_install [OPEN]
+ 48. POST         /api/nlp/analyze                         nlp_endpoint:analyze_text [OPEN]
+ 49. POST         /api/nlp/batch-analyze                   nlp_endpoint:batch_analyze_texts [OPEN]
+ 50. POST         /api/nlp/extract-topics                  nlp_endpoint:extract_topics [OPEN]
+ 51. GET          /api/nlp/stats                           nlp_endpoint:get_nlp_stats [OPEN]
+ 52. POST         /api/nlp/entities                        nlp_endpoint:extract_entities [OPEN]
+ 53. POST         /api/nlp/sentiment                       nlp_endpoint:analyze_sentiment [OPEN]
+ 54. POST         /api/nlp/key-phrases                     nlp_endpoint:extract_key_phrases [OPEN]
+ 55. POST         /api/nlp/readability                     nlp_endpoint:calculate_readability [OPEN]
+ 56. GET          /api/travel/search                       travel_endpoint:search_travel [OPEN]
+ 57. GET          /api/travel/geocode                      travel_endpoint:geocode_city [OPEN]
+ 58. GET          /api/travel/attractions/{city}           travel_endpoint:get_attractions [OPEN]
+ 59. GET          /api/travel/hotels/{city}                travel_endpoint:get_hotels [OPEN]
+ 60. GET          /api/travel/restaurants/{city}           travel_endpoint:get_restaurants [OPEN]
+ 61. GET          /api/travel/trip-plan                    travel_endpoint:plan_trip [OPEN]
+ 62. POST         /api/writing/creative                    writing_endpoint:creative_writing [OPEN]
+ 63. POST         /api/writing/vinted                      writing_endpoint:vinted_description [OPEN]
+ 64. POST         /api/writing/social                      writing_endpoint:social_media_post [OPEN]
+ 65. POST         /api/writing/auction                     writing_endpoint:auction_description [OPEN]
+ 66. POST         /api/writing/auction/pro                 writing_endpoint:auction_pro_description [OPEN]
+ 67. POST         /api/writing/fashion/analyze             writing_endpoint:fashion_analysis [OPEN]
+ 68. POST         /api/writing/auction/suggest-tags        writing_endpoint:suggest_auction_tags [OPEN]
+ 69. POST         /api/writing/auction/kb/learn            writing_endpoint:learn_auction_kb [OPEN]
+ 70. GET          /api/writing/auction/kb/fetch            writing_endpoint:fetch_auction_kb [OPEN]
+ 71. POST         /api/writing/masterpiece/article         writing_endpoint:masterpiece_article [OPEN]
+ 72. POST         /api/writing/masterpiece/sales           writing_endpoint:sales_masterpiece [OPEN]
+ 73. POST         /api/writing/masterpiece/technical       writing_endpoint:technical_masterpiece [OPEN]
+ 74. GET          /api/psyche/status                       psyche_endpoint:get_psyche_status [OPEN]
+ 75. POST         /api/psyche/save                         psyche_endpoint:update_psyche_state [OPEN]
+ 76. GET          /api/psyche/load                         psyche_endpoint:load_psyche_state [OPEN]
+ 77. POST         /api/psyche/observe                      psyche_endpoint:observe_text [OPEN]
+ 78. POST         /api/psyche/episode                      psyche_endpoint:add_episode [OPEN]
+ 79. GET          /api/psyche/reflect                      psyche_endpoint:psyche_reflect [OPEN]
+ 80. GET          /api/psyche/tune                         psyche_endpoint:get_llm_tuning_endpoint [OPEN]
+ 81. POST         /api/psyche/reset                        psyche_endpoint:reset_psyche [OPEN]
+ 82. POST         /api/psyche/analyze                      psyche_endpoint:analyze_conversation [OPEN]
+ 83. POST         /api/psyche/set-mode                     psyche_endpoint:set_mode [OPEN]
+ 84. POST         /api/psyche/enhance-prompt               psyche_endpoint:enhance_prompt [OPEN]
+ 85. GET          /api/writer/status                       writer_pro:get_writer_status [OPEN]
+ 86. POST         /api/writer/creative                     writer_pro:create_creative_text [OPEN]
+ 87. POST         /api/writer/product                      writer_pro:create_product_description [OPEN]
+ 88. POST         /api/writer/social                       writer_pro:create_social_media_post [OPEN]
+ 89. POST         /api/writer/auction/pro                  writer_pro:create_auction_pro_description [OPEN]
+ 90. POST         /api/writer/article/masterpiece          writer_pro:create_masterpiece_article [OPEN]
+ 91. POST         /api/writer/sales/masterpiece            writer_pro:create_sales_masterpiece [OPEN]
+ 92. POST         /api/writer/technical/masterpiece        writer_pro:create_technical_masterpiece [OPEN]
+ 93. POST         /api/writer/fashion/analyze              writer_pro:analyze_fashion_content [OPEN]
+ 94. GET          /api/writer/auction/tags                 writer_pro:get_auction_tags [OPEN]
+ 95. GET          /api/writer/auction/knowledge            writer_pro:get_auction_knowledge [OPEN]
+ 96. POST         /api/writer/auction/learn                writer_pro:learn_auction_knowledge [OPEN]
+ 97. GET          /api/writer/templates                    writer_pro:get_writing_templates [OPEN]
+ 98. GET          /api/routers/status                      routers:get_routers_status [OPEN]
+ 99. GET          /api/routers/health                      routers:get_system_health [OPEN]
+100. GET          /api/routers/list                        routers:list_all_endpoints [OPEN]
+101. GET          /api/routers/metrics                     routers:get_system_metrics [OPEN]
+102. GET          /api/routers/config                      routers:get_system_config [OPEN]
+103. GET          /api/routers/endpoints/summary           routers:get_endpoints_summary [OPEN]
+104. GET          /api/routers/debug/info                  routers:get_debug_info [OPEN]
+105. POST         /api/routers/cache/clear                 routers:clear_system_cache [OPEN]
+106. GET          /api/routers/version                     routers:get_version_info [OPEN]
+107. GET          /api/routers/experimental/features       routers:get_experimental_features [OPEN]
+108. POST         /api/chat/assistant                      core.assistant_endpoint:chat_assistant [OPEN]
+109. POST         /api/chat/assistant/stream               core.assistant_endpoint:chat_assistant_stream [OPEN]
+110. POST         /api/chat/auto                           core.assistant_endpoint:force_auto_learn [OPEN]
+111. POST         /api/memory/add                          core.memory_endpoint:add [OPEN]
+112. POST         /api/memory/search                       core.memory_endpoint:search [OPEN]
+113. GET          /api/memory/export                       core.memory_endpoint:export [OPEN]
+114. POST         /api/memory/import                       core.memory_endpoint:import_ [OPEN]
+115. GET          /api/memory/status                       core.memory_endpoint:status [OPEN]
+116. POST         /api/memory/optimize                     core.memory_endpoint:optimize [OPEN]
+117. POST         /api/cognitive/reflect                   core.cognitive_endpoint:self_reflect [OPEN]
+118. GET          /api/cognitive/reflection/summary        core.cognitive_endpoint:get_reflection_summary [OPEN]
+119. POST         /api/cognitive/proactive/suggestions     core.cognitive_endpoint:generate_proactive_suggestions [OPEN]
+120. POST         /api/cognitive/psychology/analyze        core.cognitive_endpoint:analyze_emotional_state [OPEN]
+121. GET          /api/cognitive/psychology/state/{user_id} core.cognitive_endpoint:get_psychology_state [OPEN]
+122. POST         /api/cognitive/process                   core.cognitive_endpoint:cognitive_process [OPEN]
+123. POST         /api/cognitive/nlp/analyze               core.cognitive_endpoint:nlp_advanced_analysis [OPEN]
+124. POST         /api/cognitive/semantic/analyze          core.cognitive_endpoint:semantic_analysis [OPEN]
+125. GET          /api/cognitive/tools/list                core.cognitive_endpoint:list_cognitive_tools [OPEN]
+126. GET          /api/cognitive/status                    core.cognitive_endpoint:cognitive_status [OPEN]
+127. POST         /api/negocjator/sprawdz-przedawnienie    core.negocjator_endpoint:endpoint_sprawdz_przedawnienie [OPEN]
+128. POST         /api/negocjator/propozycja-ugody         core.negocjator_endpoint:endpoint_propozycja_ugody [OPEN]
+129. POST         /api/negocjator/ocen-szanse              core.negocjator_endpoint:endpoint_ocen_szanse [OPEN]
+130. POST         /api/negocjator/koszty-postepowania      core.negocjator_endpoint:endpoint_koszty_postepowania [OPEN]
+131. GET          /api/negocjator/typy-dlugow              core.negocjator_endpoint:endpoint_typy_dlugow [OPEN]
+132. GET          /api/negocjator/info                     core.negocjator_endpoint:endpoint_info [OPEN]
+133. POST         /api/reflection/reflect                  core.reflection_endpoint:reflect [OPEN]
+134. POST         /api/reflection/adaptive-reflect         core.reflection_endpoint:adaptive_reflect [OPEN]
+135. GET          /api/reflection/depths                   core.reflection_endpoint:get_reflection_depths [OPEN]
+136. GET          /api/reflection/stats                    core.reflection_endpoint:get_reflection_stats [OPEN]
+137. GET          /api/reflection/meta-patterns            core.reflection_endpoint:get_meta_patterns [OPEN]
+138. GET          /api/reflection/history                  core.reflection_endpoint:get_reflection_history [OPEN]
+139. POST         /api/legal/analyze                       core.legal_office_endpoint:analyze_document [OPEN]
+140. POST         /api/legal/generate-response             core.legal_office_endpoint:generate_response [OPEN]
+141. GET          /api/legal/templates                     core.legal_office_endpoint:get_templates [OPEN]
+142. GET          /api/legal/institutions                  core.legal_office_endpoint:get_institutions [OPEN]
+143. POST         /api/legal/calculate-deadline            core.legal_office_endpoint:calculate_deadline [OPEN]
+144. POST         /api/legal/upload-scan                   core.legal_office_endpoint:upload_scan [OPEN]
+145. POST         /api/batch/process                       core.batch_endpoint:batch_process_endpoint [OPEN]
+146. GET          /api/batch/status/{batch_id}             core.batch_endpoint:get_batch_status [OPEN]
+147. GET          /api/batch/list                          core.batch_endpoint:list_batches [OPEN]
+148. DELETE       /api/batch/{batch_id}                    core.batch_endpoint:cancel_batch [OPEN]
+149. GET          /metrics                                 core.prometheus_endpoint:get_prometheus_metrics [OPEN]
+150. GET          /health                                  core.prometheus_endpoint:health_check [OPEN]
+151. GET          /stats                                   core.prometheus_endpoint:get_stats [OPEN]
+152. POST         /api/suggestions/generate                core.suggestions_endpoint:generate_suggestions [OPEN]
+153. POST         /api/suggestions/inject                  core.suggestions_endpoint:inject_suggestions [OPEN]
+154. GET          /api/suggestions/stats                   core.suggestions_endpoint:get_stats [OPEN]
+155. POST         /api/suggestions/analyze                 core.suggestions_endpoint:analyze_message [OPEN]
+156. POST         /api/research/search                     core.research_endpoint:web_search [OPEN]
+157. POST         /api/research/autonauka                  core.research_endpoint:run_autonauka [OPEN]
+158. GET          /api/research/sources                    core.research_endpoint:available_sources [OPEN]
+159. GET          /api/research/test                       core.research_endpoint:test_research [OPEN]
+160. GET          /api/admin/cache/stats                   core.admin_endpoint:cache_stats [OPEN]
+161. POST         /api/admin/cache/clear                   core.admin_endpoint:clear_cache [OPEN]
+162. GET          /api/admin/ratelimit/usage/{user_id}     core.admin_endpoint:rate_limit_usage [OPEN]
+163. GET          /api/admin/ratelimit/config              core.admin_endpoint:rate_limit_config [OPEN]
+164. POST         /api/admin/jwt/rotate                    core.admin_endpoint:admin_rotate_jwt [OPEN]
+165. POST         /api/hacker/scan/ports                   core.hacker_endpoint:network_scan [OPEN]
+166. POST         /api/hacker/scan/vulnerabilities         core.hacker_endpoint:vulnerability_scanner [OPEN]
+167. POST         /api/hacker/exploit/sqli                 core.hacker_endpoint:sql_injection_scanner [OPEN]
+168. POST         /api/hacker/recon/domain                 core.hacker_endpoint:domain_reconnaissance [OPEN]
+169. GET          /api/hacker/tools/status                 core.hacker_endpoint:hacker_tools_status [OPEN]
+170. GET          /api/hacker/exploits/list                core.hacker_endpoint:list_exploit_modules [OPEN]
+171. GET          /api/psyche/status                       core.psyche_endpoint:get_psyche_status [OPEN]
+172. POST         /api/psyche/save                         core.psyche_endpoint:update_psyche_state [OPEN]
+173. GET          /api/psyche/load                         core.psyche_endpoint:load_psyche_state [OPEN]
+174. POST         /api/psyche/observe                      core.psyche_endpoint:observe_text [OPEN]
+175. POST         /api/psyche/episode                      core.psyche_endpoint:add_episode [OPEN]
+176. GET          /api/psyche/reflect                      core.psyche_endpoint:psyche_reflect [OPEN]
+177. GET          /api/psyche/tune                         core.psyche_endpoint:get_llm_tuning_endpoint [OPEN]
+178. POST         /api/psyche/reset                        core.psyche_endpoint:reset_psyche [OPEN]
+179. POST         /api/psyche/analyze                      core.psyche_endpoint:analyze_conversation [OPEN]
+180. POST         /api/psyche/set-mode                     core.psyche_endpoint:set_mode [OPEN]
+181. POST         /api/psyche/enhance-prompt               core.psyche_endpoint:enhance_prompt [OPEN]
+182. GET          /core/chat/advanced/health               core.chat_advanced_endpoint:health [OPEN]
+183. POST         /core/chat/advanced                      core.chat_advanced_endpoint:chat_advanced [OPEN]
+184. POST         /core/chat/advanced/openai               core.chat_advanced_endpoint:chat_advanced_openai [OPEN]
+185. POST         /core/chat/advanced/stream               core.chat_advanced_endpoint:chat_advanced_stream [OPEN]
+186. POST         /api/auction/analyze                     core.auction_endpoint:analyze_auction [OPEN]
+187. POST         /api/auction/optimize-price              core.auction_endpoint:optimize_price [OPEN]
+188. POST         /api/auction/optimize-description        core.auction_endpoint:optimize_description [OPEN]
+189. POST         /api/auction/market-analysis             core.auction_endpoint:market_analysis [OPEN]
+190. GET          /api/auction/categories                  core.auction_endpoint:get_categories [OPEN]
+191. GET          /api/routers/status                      app:routers_status [OPEN]
+192. GET          /api/endpoints/list                      app:endpoints_list [OPEN]
+
+=== SUMMARY ===
+Total routes: 192
+Auth-protected: 0
+Public: 192
+Percent public: 100.0%
