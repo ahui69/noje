@@ -7,6 +7,7 @@
 4. Upewnij się, że katalog `static/` istnieje (jest potrzebny do startu FastAPI; repo zawiera `static/README.md`).
 5. Uruchom serwer: `uvicorn app:app --host 0.0.0.0 --port 8080` (dev dodaj `--reload`).
 6. Sprawdź, co realnie się wczytało: `python audit_runtime_routes.py` (drukuje listę ładujących się routerów i pełny wykaz ścieżek).
+7. Endpointy `/health` (app) i `/health` z modułu Prometheus zwracają ten sam, spójny payload (status, wersja, ENV, metryki) – monitorowanie działa identycznie niezależnie od źródła.
 
 ## Gdzie jest pełny audyt
 Kompletny raport i plan napraw znajdziesz w `AUDYT_MRD.md` w katalogu głównym repozytorium.
