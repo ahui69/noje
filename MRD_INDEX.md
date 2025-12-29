@@ -1,0 +1,302 @@
+# MRD repo index
+
+- generated_at: `2025-12-25T18:21:14Z`
+- root: `/root/mrd`
+- files_scanned: `132`
+- modules: `132`
+- defs_total: `1127`
+- dur_s: `0.465`
+
+## LLM callable candidates (39)
+
+- `assistant_simple` :: async `_llm_chat` @ /root/mrd/assistant_simple.py:141
+  - params: messages, temperature, max_tokens
+- `assistant_simple` :: async `_llm_chat_stream_tokens` @ /root/mrd/assistant_simple.py:159
+  - params: messages, temperature, max_tokens
+- `tts_elevenlabs` :: async `text_to_speech` @ /root/mrd/tts_elevenlabs.py:28
+  - params: text, voice_id, model, voice_settings
+- `vision_provider` :: async `analyze_image_universal` @ /root/mrd/vision_provider.py:16
+  - params: base64_data, mime_type, filename, prompt
+- `vision_provider` :: async `_analyze_openai_vision` @ /root/mrd/vision_provider.py:54
+  - params: base64_data, mime_type, prompt
+- `vision_provider` :: async `_analyze_google_vision` @ /root/mrd/vision_provider.py:104
+  - params: base64_data, prompt
+- `autonauka_pro` :: def `_fallback_fact_extract` @ /root/mrd/autonauka_pro.py:387
+  - params: prompt
+- `writing_endpoint` :: def `_derive_title` @ /root/mrd/writing_endpoint.py:280
+  - params: prompt
+- `research` :: def `_fallback_fact_extract` @ /root/mrd/research.py:409
+  - params: prompt
+- `core.context_awareness` :: def `create_rolling_summary` @ /root/mrd/core/context_awareness.py:171
+  - params: messages, max_length
+- `core.context_awareness` :: def `trim_context_smart` @ /root/mrd/core/context_awareness.py:208
+  - params: messages, target_count, keep_first, keep_last
+- `core.context_awareness` :: def `compress_context` @ /root/mrd/core/context_awareness.py:294
+  - params: messages, token_budget
+- `core.context_awareness` :: def `process_context` @ /root/mrd/core/context_awareness.py:470
+  - params: conversation_id, messages, force_compress
+- `core.smart_context` :: def `select_important_messages` @ /root/mrd/core/smart_context.py:109
+  - params: messages, current_query, max_tokens, min_messages, max_messages
+- `core.smart_context` :: def `build_smart_context` @ /root/mrd/core/smart_context.py:187
+  - params: messages, current_query, summary, max_tokens
+- `core.smart_context` :: def `trim_context_to_limit` @ /root/mrd/core/smart_context.py:237
+  - params: messages, max_tokens
+- `core.memory_summarizer` :: async `summarize_conversation` @ /root/mrd/core/memory_summarizer.py:61
+  - params: messages
+- `core.knowledge_compression` :: async `_chat_text` @ /root/mrd/core/knowledge_compression.py:36
+  - params: llm_client, messages
+- `core.llm` :: def `_normalize_messages` @ /root/mrd/core/llm.py:53
+  - params: messages, prompt, system_prompt
+- `core.llm` :: def `_generate_cache_key` @ /root/mrd/core/llm.py:81
+  - params: messages, model, **opts
+- `core.llm` :: def `_http_call` @ /root/mrd/core/llm.py:97
+  - params: model, messages, timeout_s, stream, extra_payload
+- `core.llm` :: def `_llm_request` @ /root/mrd/core/llm.py:130
+  - params: messages, model, temperature, max_tokens, timeout_s, retries, backoff_s, stream, extra_payload
+- `core.llm` :: def `call_llm` @ /root/mrd/core/llm.py:200
+  - params: messages, prompt, system_prompt, temperature, max_tokens, timeout_s, skip_cache, cache_ttl, model, use_fallback, **extra_opts
+- `core.llm` :: def `call_llm_raw` @ /root/mrd/core/llm.py:292
+  - params: messages, prompt, system_prompt, **opts
+- `core.llm` :: def `call_llm_stream` @ /root/mrd/core/llm.py:308
+  - params: messages, prompt, system_prompt, **opts
+- `core.llm` :: def `stream_llm` @ /root/mrd/core/llm.py:324
+  - params: messages, prompt, system_prompt, **opts
+- `core.llm` :: async `call_llm_stream_with_fallback` @ /root/mrd/core/llm.py:341
+  - params: messages, **opts
+- `core.chat_advanced_endpoint` :: def `_to_openai_response` @ /root/mrd/core/chat_advanced_endpoint.py:67
+  - params: text, model
+- `core.batch_processing` :: async `call_llm_batch` @ /root/mrd/core/batch_processing.py:445
+  - params: messages, **params
+- `core.tools_registry` :: def `format_for_openai` @ /root/mrd/core/tools_registry.py:958
+  - params: tools
+- `core.helpers` :: def `embed_texts` @ /root/mrd/core/helpers.py:534
+  - params: texts, model, base_url, api_key, timeout_s, max_retries
+- `core.advanced_psychology` :: async `analyze_conversation_psychology` @ /root/mrd/core/advanced_psychology.py:1112
+  - params: messages
+- `core.semantic` :: def `semantic_analyze_conversation` @ /root/mrd/core/semantic.py:1466
+  - params: messages
+- `core.future_predictor` :: async `_chat_text` @ /root/mrd/core/future_predictor.py:39
+  - params: llm_client, messages
+- `core.intent_dispatcher` :: async `execute_selected_tools` @ /root/mrd/core/intent_dispatcher.py:34
+  - params: tools, user_id
+- `core.advanced_llm` :: async `call_advanced_llm` @ /root/mrd/core/advanced_llm.py:65
+  - params: prompt, **kwargs
+- `core.advanced_llm` :: async `adaptive_llm_call` @ /root/mrd/core/advanced_llm.py:170
+  - params: prompt, **kwargs
+- `core.advanced_llm` :: async `aask` @ /root/mrd/core/advanced_llm.py:178
+  - params: prompt, **kwargs
+- `core.research` :: def `_fallback_fact_extract` @ /root/mrd/core/research.py:410
+  - params: prompt
+
+## Memory class candidates (3)
+
+- `core.executor` :: class `Programista` @ /root/mrd/core/executor.py:56
+  - methods: __init__, exec, snapshot, plan, project_init, venv_create, venv_exec, deps_add, qa, format, test, git_init, git, dockerize, docker, makefile, write_file, read_file, append_file, replace_in_file, search, tree, zip, tar, checksum, bench
+- `core.memory` :: class `UnifiedMemorySystem` @ /root/mrd/core/memory.py:1121
+  - methods: __init__, start_background_tasks, stop_background_tasks, search, process_conversation_turn, retrieve_context, auto_consolidate, cleanup_old_memories, get_health_stats, _get_all_users
+- `core.hierarchical_memory` :: class `HierarchicalMemorySystem` @ /root/mrd/core/hierarchical_memory.py:683
+  - methods: __init__, process_new_memory, consolidate_memories, retrieve_comprehensive_context, analyze_memory_health, _extract_entities, _detect_emotions, _extract_semantic_insights, _identify_procedural_patterns, _should_trigger_consolidation, search_hybrid
+
+## Inner language candidates (29)
+
+- `files_endpoint` :: def `analyze_image` @ /root/mrd/files_endpoint.py:73
+  - params: file_path
+- `files_endpoint` :: async `analyze_file` @ /root/mrd/files_endpoint.py:340
+  - params: body, _
+- `files_endpoint` :: async `batch_analyze` @ /root/mrd/files_endpoint.py:416
+  - params: file_ids, _
+- `suggestions_endpoint` :: async `analyze_message` @ /root/mrd/suggestions_endpoint.py:130
+  - params: data, _
+- `writer_pro` :: async `analyze_fashion_content` @ /root/mrd/writer_pro.py:384
+  - params: text, _
+- `proactive_suggestions` :: def `analyze_context` @ /root/mrd/proactive_suggestions.py:10
+  - params: user_message, conversation_history
+- `vision_provider` :: async `analyze_image_universal` @ /root/mrd/vision_provider.py:16
+  - params: base64_data, mime_type, filename, prompt
+- `vision_provider` :: async `_analyze_openai_vision` @ /root/mrd/vision_provider.py:54
+  - params: base64_data, mime_type, prompt
+- `vision_provider` :: async `_analyze_google_vision` @ /root/mrd/vision_provider.py:104
+  - params: base64_data, prompt
+- `vision_provider` :: async `_analyze_basic` @ /root/mrd/vision_provider.py:180
+  - params: base64_data, mime_type, filename
+- `psyche_endpoint` :: async `analyze_conversation` @ /root/mrd/psyche_endpoint.py:330
+  - params: body, _
+- `nlp_endpoint` :: async `analyze_text` @ /root/mrd/nlp_endpoint.py:76
+  - params: request, authorization
+- `nlp_endpoint` :: async `batch_analyze_texts` @ /root/mrd/nlp_endpoint.py:102
+  - params: request, background_tasks, authorization
+- `nlp_endpoint` :: async `analyze_sentiment` @ /root/mrd/nlp_endpoint.py:223
+  - params: request, authorization
+- `core.writing` :: def `analyze_fashion_text` @ /root/mrd/core/writing.py:59
+  - params: txt
+- `core.suggestions_endpoint` :: async `analyze_message` @ /root/mrd/core/suggestions_endpoint.py:147
+  - params: data, auth
+- `core.advanced_proactive` :: def `analyze_context` @ /root/mrd/core/advanced_proactive.py:1117
+  - params: user_message, conversation_history
+- `core.cognitive_endpoint` :: async `analyze_emotional_state` @ /root/mrd/core/cognitive_endpoint.py:180
+  - params: body, _auth
+- `core.advanced_psychology` :: async `analyze_conversation_psychology` @ /root/mrd/core/advanced_psychology.py:1112
+  - params: messages
+- `core.semantic` :: def `semantic_analyze` @ /root/mrd/core/semantic.py:1462
+  - params: text
+- `core.semantic` :: def `semantic_analyze_conversation` @ /root/mrd/core/semantic.py:1466
+  - params: messages
+- `core.auction_endpoint` :: async `analyze_auction` @ /root/mrd/core/auction_endpoint.py:66
+  - params: req, body
+- `core.legal_office_endpoint` :: async `analyze_document` @ /root/mrd/core/legal_office_endpoint.py:804
+  - params: req, content, is_image, additional_info, _
+- `core.intent_dispatcher` :: async `analyze_intent_and_select_tools` @ /root/mrd/core/intent_dispatcher.py:24
+  - params: message, context
+- `core.psyche_endpoint` :: async `analyze_conversation` @ /root/mrd/core/psyche_endpoint.py:330
+  - params: body, _
+- `core.inner_language` :: class `InnerLanguageProcessor` @ /root/mrd/core/inner_language.py:101
+  - methods: __init__, process_natural_language_input, _analyze_semantic_content, _fallback_semantic_analysis, _validate_dimensions, _default_dimensions, _map_to_inner_tokens, _get_or_create_token, _extract_semantic_core, _compress_token_chain, _apply_pattern_compression, _sequences_match, _apply_cluster_compression, _find_token_cluster, _generate_semantic_vector, _token_to_vector, _generate_pattern_cluster_vector, _calculate_thought_confidence, _assess_thought_originality, _update_association_networks, _manage_dictionary_size, _create_fallback_thought, translate_to_natural_language, find_associations, discover_thought_patterns, _calculate_pattern_effectiveness, cluster_semantic_tokens, _calculate_token_similarity, _string_similarity, _determine_cluster_theme, _calculate_cluster_coherence, get_inner_language_report
+- `core.inner_language` :: def `get_inner_language_processor` @ /root/mrd/core/inner_language.py:1302
+- `core.inner_language` :: async `process_inner_thought` @ /root/mrd/core/inner_language.py:1309
+  - params: text, context
+- `core.inner_language` :: async `translate_inner_thought` @ /root/mrd/core/inner_language.py:1323
+  - params: inner_thought, style
+
+## Reranker / compressor candidates (3)
+
+- `autonauka_pro` :: class `BM25` @ /root/mrd/autonauka_pro.py:302
+  - methods: __init__, _build, score
+- `research` :: class `BM25` @ /root/mrd/research.py:313
+  - methods: __init__, _build, score
+- `core.research` :: class `BM25` @ /root/mrd/core/research.py:314
+  - methods: __init__, _build, score
+
+## All modules
+
+- `app`  (/root/mrd/app.py)  defs=9 imports=11 parse_error=False
+- `assistant_endpoint`  (/root/mrd/assistant_endpoint.py)  defs=8 imports=10 parse_error=False
+- `assistant_simple`  (/root/mrd/assistant_simple.py)  defs=17 imports=13 parse_error=False
+- `audit_adv_cog_extract`  (/root/mrd/audit_adv_cog_extract.py)  defs=9 imports=6 parse_error=False
+- `autonauka_pro`  (/root/mrd/autonauka_pro.py)  defs=40 imports=21 parse_error=False
+- `core`  (/root/mrd/core/__init__.py)  defs=1 imports=1 parse_error=False
+- `core.admin_endpoint`  (/root/mrd/core/admin_endpoint.py)  defs=7 imports=3 parse_error=False
+- `core.advanced_autorouter`  (/root/mrd/core/advanced_autorouter.py)  defs=5 imports=4 parse_error=False
+- `core.advanced_cognitive_engine`  (/root/mrd/core/advanced_cognitive_engine.py)  defs=16 imports=10 parse_error=False
+- `core.advanced_learning`  (/root/mrd/core/advanced_learning.py)  defs=1 imports=5 parse_error=False
+- `core.advanced_llm`  (/root/mrd/core/advanced_llm.py)  defs=7 imports=5 parse_error=False
+- `core.advanced_memory`  (/root/mrd/core/advanced_memory.py)  defs=8 imports=12 parse_error=False
+- `core.advanced_proactive`  (/root/mrd/core/advanced_proactive.py)  defs=6 imports=12 parse_error=False
+- `core.advanced_psychology`  (/root/mrd/core/advanced_psychology.py)  defs=10 imports=12 parse_error=False
+- `core.ai_auction`  (/root/mrd/core/ai_auction.py)  defs=1 imports=5 parse_error=False
+- `core.app`  (/root/mrd/core/app.py)  defs=15 imports=12 parse_error=False
+- `core.assistant_endpoint`  (/root/mrd/core/assistant_endpoint.py)  defs=8 imports=10 parse_error=False
+- `core.auction_endpoint`  (/root/mrd/core/auction_endpoint.py)  defs=10 imports=7 parse_error=False
+- `core.auth`  (/root/mrd/core/auth.py)  defs=7 imports=4 parse_error=False
+- `core.autoroute`  (/root/mrd/core/autoroute.py)  defs=2 imports=3 parse_error=False
+- `core.batch_endpoint`  (/root/mrd/core/batch_endpoint.py)  defs=5 imports=5 parse_error=False
+- `core.batch_processing`  (/root/mrd/core/batch_processing.py)  defs=8 imports=9 parse_error=False
+- `core.brave_search`  (/root/mrd/core/brave_search.py)  defs=5 imports=6 parse_error=False
+- `core.chat_advanced_endpoint`  (/root/mrd/core/chat_advanced_endpoint.py)  defs=8 imports=7 parse_error=False
+- `core.cognitive_endpoint`  (/root/mrd/core/cognitive_endpoint.py)  defs=17 imports=5 parse_error=False
+- `core.cognitive_engine`  (/root/mrd/core/cognitive_engine.py)  defs=1 imports=14 parse_error=False
+- `core.config`  (/root/mrd/core/config.py)  defs=1 imports=3 parse_error=False
+- `core.context_awareness`  (/root/mrd/core/context_awareness.py)  defs=9 imports=5 parse_error=False
+- `core.conversation_analytics`  (/root/mrd/core/conversation_analytics.py)  defs=4 imports=6 parse_error=False
+- `core.executor`  (/root/mrd/core/executor.py)  defs=8 imports=15 parse_error=False
+- `core.fact_validation`  (/root/mrd/core/fact_validation.py)  defs=14 imports=8 parse_error=False
+- `core.future_predictor`  (/root/mrd/core/future_predictor.py)  defs=10 imports=15 parse_error=False
+- `core.hacker_endpoint`  (/root/mrd/core/hacker_endpoint.py)  defs=15 imports=11 parse_error=False
+- `core.helpers`  (/root/mrd/core/helpers.py)  defs=24 imports=11 parse_error=False
+- `core.hierarchical_memory`  (/root/mrd/core/hierarchical_memory.py)  defs=16 imports=10 parse_error=False
+- `core.hybrid_search_endpoint`  (/root/mrd/core/hybrid_search_endpoint.py)  defs=8 imports=5 parse_error=False
+- `core.inner_language`  (/root/mrd/core/inner_language.py)  defs=10 imports=17 parse_error=False
+- `core.intent_dispatcher`  (/root/mrd/core/intent_dispatcher.py)  defs=2 imports=6 parse_error=False
+- `core.knowledge_compression`  (/root/mrd/core/knowledge_compression.py)  defs=8 imports=16 parse_error=False
+- `core.legal_office_endpoint`  (/root/mrd/core/legal_office_endpoint.py)  defs=16 imports=10 parse_error=False
+- `core.llm`  (/root/mrd/core/llm.py)  defs=12 imports=8 parse_error=False
+- `core.memory`  (/root/mrd/core/memory.py)  defs=48 imports=18 parse_error=False
+- `core.memory_endpoint`  (/root/mrd/core/memory_endpoint.py)  defs=10 imports=8 parse_error=False
+- `core.memory_persistence`  (/root/mrd/core/memory_persistence.py)  defs=5 imports=12 parse_error=False
+- `core.memory_store`  (/root/mrd/core/memory_store.py)  defs=26 imports=9 parse_error=False
+- `core.memory_summarizer`  (/root/mrd/core/memory_summarizer.py)  defs=10 imports=9 parse_error=False
+- `core.metrics`  (/root/mrd/core/metrics.py)  defs=15 imports=6 parse_error=False
+- `core.middleware`  (/root/mrd/core/middleware.py)  defs=7 imports=9 parse_error=False
+- `core.multi_agent_orchestrator`  (/root/mrd/core/multi_agent_orchestrator.py)  defs=7 imports=14 parse_error=False
+- `core.negocjator_endpoint`  (/root/mrd/core/negocjator_endpoint.py)  defs=18 imports=7 parse_error=False
+- `core.nlp_processor`  (/root/mrd/core/nlp_processor.py)  defs=5 imports=12 parse_error=False
+- `core.parallel`  (/root/mrd/core/parallel.py)  defs=7 imports=9 parse_error=False
+- `core.prometheus_endpoint`  (/root/mrd/core/prometheus_endpoint.py)  defs=3 imports=3 parse_error=False
+- `core.prompt`  (/root/mrd/core/prompt.py)  defs=0 imports=0 parse_error=False
+- `core.psyche_endpoint`  (/root/mrd/core/psyche_endpoint.py)  defs=19 imports=7 parse_error=False
+- `core.redis_middleware`  (/root/mrd/core/redis_middleware.py)  defs=3 imports=8 parse_error=False
+- `core.reflection_endpoint`  (/root/mrd/core/reflection_endpoint.py)  defs=8 imports=7 parse_error=False
+- `core.research`  (/root/mrd/core/research.py)  defs=59 imports=26 parse_error=False
+- `core.research_endpoint`  (/root/mrd/core/research_endpoint.py)  defs=7 imports=6 parse_error=False
+- `core.response_adapter`  (/root/mrd/core/response_adapter.py)  defs=1 imports=2 parse_error=False
+- `core.self_reflection`  (/root/mrd/core/self_reflection.py)  defs=5 imports=12 parse_error=False
+- `core.semantic`  (/root/mrd/core/semantic.py)  defs=7 imports=11 parse_error=False
+- `core.sessions`  (/root/mrd/core/sessions.py)  defs=13 imports=11 parse_error=False
+- `core.smart_context`  (/root/mrd/core/smart_context.py)  defs=8 imports=6 parse_error=False
+- `core.stress_test_system`  (/root/mrd/core/stress_test_system.py)  defs=1 imports=16 parse_error=False
+- `core.suggestions_endpoint`  (/root/mrd/core/suggestions_endpoint.py)  defs=4 imports=5 parse_error=False
+- `core.tavily_search`  (/root/mrd/core/tavily_search.py)  defs=5 imports=6 parse_error=False
+- `core.tools`  (/root/mrd/core/tools.py)  defs=11 imports=10 parse_error=False
+- `core.tools_registry`  (/root/mrd/core/tools_registry.py)  defs=5 imports=2 parse_error=False
+- `core.ultra_destruction_test`  (/root/mrd/core/ultra_destruction_test.py)  defs=1 imports=20 parse_error=False
+- `core.user_model`  (/root/mrd/core/user_model.py)  defs=1 imports=3 parse_error=False
+- `core.writing`  (/root/mrd/core/writing.py)  defs=15 imports=10 parse_error=False
+- `deploy`  (/root/mrd/deploy.py)  defs=4 imports=6 parse_error=False
+- `example`  (/root/mrd/example.py)  defs=0 imports=4 parse_error=False
+- `files_endpoint`  (/root/mrd/files_endpoint.py)  defs=18 imports=11 parse_error=False
+- `fix_openai_compat_boundary_hard`  (/root/mrd/fix_openai_compat_boundary_hard.py)  defs=1 imports=4 parse_error=False
+- `fix_openai_compat_broken_strings`  (/root/mrd/fix_openai_compat_broken_strings.py)  defs=2 imports=4 parse_error=False
+- `hierarchical_memory`  (/root/mrd/hierarchical_memory.py)  defs=15 imports=9 parse_error=False
+- `hybrid_search_endpoint`  (/root/mrd/hybrid_search_endpoint.py)  defs=8 imports=5 parse_error=False
+- `internal_endpoint`  (/root/mrd/internal_endpoint.py)  defs=1 imports=2 parse_error=False
+- `nlp_endpoint`  (/root/mrd/nlp_endpoint.py)  defs=16 imports=8 parse_error=False
+- `openai_compat`  (/root/mrd/openai_compat.py)  defs=5 imports=9 parse_error=False
+- `patch_add_cognitive_mode_enum`  (/root/mrd/patch_add_cognitive_mode_enum.py)  defs=4 imports=5 parse_error=False
+- `patch_add_get_advanced_cognitive_engine`  (/root/mrd/patch_add_get_advanced_cognitive_engine.py)  defs=2 imports=5 parse_error=False
+- `patch_app_nonfatal_failed_routers`  (/root/mrd/patch_app_nonfatal_failed_routers.py)  defs=3 imports=4 parse_error=False
+- `patch_bootstrap_advanced_cognitive_types`  (/root/mrd/patch_bootstrap_advanced_cognitive_types.py)  defs=3 imports=5 parse_error=False
+- `patch_chatbox_buffer`  (/root/mrd/patch_chatbox_buffer.py)  defs=1 imports=4 parse_error=False
+- `patch_disable_any_router_exception_handler_router_vars`  (/root/mrd/patch_disable_any_router_exception_handler_router_vars.py)  defs=4 imports=5 parse_error=False
+- `patch_disable_apirouter_exception_handler_repo_wide`  (/root/mrd/patch_disable_apirouter_exception_handler_repo_wide.py)  defs=4 imports=5 parse_error=False
+- `patch_fix_deploy_py_fstring_backslash`  (/root/mrd/patch_fix_deploy_py_fstring_backslash.py)  defs=2 imports=5 parse_error=False
+- `patch_fix_future_import_position_in_advanced_cognitive_engine`  (/root/mrd/patch_fix_future_import_position_in_advanced_cognitive_engine.py)  defs=4 imports=5 parse_error=False
+- `patch_fix_writing_fstring_resub_cat_tag`  (/root/mrd/patch_fix_writing_fstring_resub_cat_tag.py)  defs=3 imports=5 parse_error=False
+- `patch_fix_writing_hashtags_fstring_regex`  (/root/mrd/patch_fix_writing_hashtags_fstring_regex.py)  defs=2 imports=5 parse_error=False
+- `patch_force_alias_get_advanced_cognitive_engine`  (/root/mrd/patch_force_alias_get_advanced_cognitive_engine.py)  defs=2 imports=5 parse_error=False
+- `patch_move_cognitive_mode_to_top`  (/root/mrd/patch_move_cognitive_mode_to_top.py)  defs=0 imports=0 parse_error=True
+- `patch_mrd_fix_compile_and_failed_routers`  (/root/mrd/patch_mrd_fix_compile_and_failed_routers.py)  defs=7 imports=5 parse_error=False
+- `patch_mrd_fix_fstrings_and_router_exception_handler`  (/root/mrd/patch_mrd_fix_fstrings_and_router_exception_handler.py)  defs=6 imports=5 parse_error=False
+- `patch_nonfatal_failed_routers_everywhere`  (/root/mrd/patch_nonfatal_failed_routers_everywhere.py)  defs=4 imports=5 parse_error=False
+- `patch_stream_finaldelta`  (/root/mrd/patch_stream_finaldelta.py)  defs=1 imports=4 parse_error=False
+- `patch_stream_pingflush`  (/root/mrd/patch_stream_pingflush.py)  defs=1 imports=4 parse_error=False
+- `proactive_suggestions`  (/root/mrd/proactive_suggestions.py)  defs=3 imports=2 parse_error=False
+- `programista_endpoint`  (/root/mrd/programista_endpoint.py)  defs=25 imports=7 parse_error=False
+- `prometheus_endpoint`  (/root/mrd/prometheus_endpoint.py)  defs=3 imports=3 parse_error=False
+- `psyche_endpoint`  (/root/mrd/psyche_endpoint.py)  defs=19 imports=7 parse_error=False
+- `research`  (/root/mrd/research.py)  defs=59 imports=26 parse_error=False
+- `research_endpoint`  (/root/mrd/research_endpoint.py)  defs=7 imports=6 parse_error=False
+- `routers`  (/root/mrd/routers.py)  defs=11 imports=7 parse_error=False
+- `scripts.check_requirements`  (/root/mrd/scripts/check_requirements.py)  defs=9 imports=6 parse_error=False
+- `sports_news_pro`  (/root/mrd/sports_news_pro.py)  defs=4 imports=4 parse_error=False
+- `stress_test_system`  (/root/mrd/stress_test_system.py)  defs=1 imports=16 parse_error=False
+- `stt_endpoint`  (/root/mrd/stt_endpoint.py)  defs=3 imports=6 parse_error=False
+- `suggestions_endpoint`  (/root/mrd/suggestions_endpoint.py)  defs=4 imports=3 parse_error=False
+- `system_stats`  (/root/mrd/system_stats.py)  defs=6 imports=3 parse_error=False
+- `test_web_learn`  (/root/mrd/test_web_learn.py)  defs=1 imports=2 parse_error=False
+- `tests`  (/root/mrd/tests/__init__.py)  defs=0 imports=0 parse_error=False
+- `tests.conftest`  (/root/mrd/tests/conftest.py)  defs=4 imports=4 parse_error=False
+- `tests.test_api_endpoints`  (/root/mrd/tests/test_api_endpoints.py)  defs=8 imports=1 parse_error=False
+- `tests.test_batch_processing`  (/root/mrd/tests/test_batch_processing.py)  defs=1 imports=5 parse_error=False
+- `tests.test_core_modules`  (/root/mrd/tests/test_core_modules.py)  defs=9 imports=3 parse_error=False
+- `tests.test_hierarchical_memory`  (/root/mrd/tests/test_hierarchical_memory.py)  defs=5 imports=7 parse_error=False
+- `tests.test_integration`  (/root/mrd/tests/test_integration.py)  defs=5 imports=2 parse_error=False
+- `tests.test_proactive_suggestions`  (/root/mrd/tests/test_proactive_suggestions.py)  defs=1 imports=6 parse_error=False
+- `tests.test_vision_tts`  (/root/mrd/tests/test_vision_tts.py)  defs=5 imports=2 parse_error=False
+- `tests.test_writing_endpoint`  (/root/mrd/tests/test_writing_endpoint.py)  defs=6 imports=4 parse_error=False
+- `tools.mrd_repo_index`  (/root/mrd/tools/mrd_repo_index.py)  defs=12 imports=8 parse_error=False
+- `travel_endpoint`  (/root/mrd/travel_endpoint.py)  defs=7 imports=8 parse_error=False
+- `tts_elevenlabs`  (/root/mrd/tts_elevenlabs.py)  defs=3 imports=5 parse_error=False
+- `tts_endpoint`  (/root/mrd/tts_endpoint.py)  defs=8 imports=9 parse_error=False
+- `ultra_destruction_test`  (/root/mrd/ultra_destruction_test.py)  defs=1 imports=20 parse_error=False
+- `vision_provider`  (/root/mrd/vision_provider.py)  defs=4 imports=6 parse_error=False
+- `writer_pro`  (/root/mrd/writer_pro.py)  defs=21 imports=7 parse_error=False
+- `writing_endpoint`  (/root/mrd/writing_endpoint.py)  defs=27 imports=5 parse_error=False

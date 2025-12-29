@@ -1,0 +1,430 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from __future__ import annotations
+
+from pathlib import Path
+from datetime import datetime
+import re
+import sys
+
+ROOT = Path("/root/mrd")
+CORE = ROOT / "core"
+
+TS = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+
+
+def die(msg: str, code: int = 1) -> "NoReturn":
+    print(msg, file=sys.stderr)
+    raise SystemExit(code)
+
+
+def backup(p: Path) -> Path:
+    b = p.with_suffix(p.suffix + f".bak.{TS}")
+    b.write_text(p.read_text(encoding="utf-8"), encoding="utf-8")
+    return b
+
+
+def patch_writing_py() -> bool:
+    p = CORE / "writing.py"
+    if not p.exists():
+        print("[SKIP] core/writing.py not found")
+        return False
+
+    s = p.read_text(encoding="utf-8")
+
+    # Szukamy dokładnie bloku promptu w write_social() z wadliwym wyrażeniem {('Kontekst:' + chr(10) + web_ctx) ...}
+    pat = re.compile(
+        r"(?ms)^\s*prompt\s*=\s*f\"\"\"Platforma:\s*\{platform\}\s*\n"
+        r"\s*Temat:\s*\{topic\}\s*\n"
+        r"\s*Ton:\s*\{tone\}\s*\n"
+        r"\s*Hashtagi:\s*\{hashtags\}\s*\n"
+        r"\s*\{\('Kontekst:\\n'\s*\+\s*web_ctx\)\s*if\s*web_ctx\s*else\s*''\}\s*\n"
+        r"\s*Wymagania:.*?\"\"\"\s*$"
+    )
+
+    if not pat.search(s):
+        # może format trochę inny – łapiemy luźniej: linia z {('Kontekst:' + chr(10) + web_ctx) if web_ctx else ''}
+        if "{('Kontekst:\' + chr(10) + web_ctx) if web_ctx else ''}" not in s:
+            print("[SKIP] core/writing.py: pattern not found (maybe already fixed)")
+            return False
+
+        # Luźniejszy replace samej linijki (najbezpieczniejsze)
+        # Ale żeby nie robić kaszany, wolimy podmienić cały prompt w write_social() bardziej stabilnie.
+        pass
+
+    b = backup(p)
+
+    # Twardszy patch: znajdujemy funkcję write_social i podmieniamy tylko fragment budowania promptu.
+    # Robimy to w sposób odporny: zamieniamy pierwsze wystąpienie "prompt = f\"\"\"Platforma:" aż do końca triple-quote.
+    func_pat = re.compile(r"(?ms)(^\s*def\s+write_social\s*\(.*?\)\s*->\s*str:\s*\n.*?^\s*t\s*=\s*psy_tune\(\)\s*\n)(.*?)(^\s*out\s*=\s*call_llm\(\[)", re.M)
+    m = func_pat.search(s)
+    if not m:
+        die("[ERR] core/writing.py: nie mogę znaleźć bloku write_social() do patcha.")
+
+    head = m.group(1)
+    mid = m.group(2)
+    tail_marker = m.group(3)
+
+    # W mid szukamy promptu; jeśli brak, i tak wstawimy poprawny prompt po t=psy_tune()
+    # Usuwamy stary prompt (jeśli jest), żeby nie dublować.
+    mid2 = re.sub(r"(?ms)^\s*prompt\s*=.*?^\s*$", "", mid)  # miękko czyści pojedyncze linie prompt=
+    # a teraz tniemy ewentualne wielolinijki promptu (triple-quote)
+    mid2 = re.sub(r"(?ms)^\s*prompt\s*=\s*f?\"\"\".*?\"\"\"\s*\n", "", mid2)
+    mid2 = re.sub(r"(?ms)^\s*prompt\s*=\s*f?'''.*?'''\s*\n", "", mid2)
+
+    prompt_block = (
+        "    ctx = (\"Kontekst:\\n\" + web_ctx.strip() + \"\\n\") if web_ctx else \"\"\n"
+        "    prompt = (\n"
+        "        f\"Platforma: {platform}\\n\"\n"
+        "        f\"Temat: {topic}\\n\"\n"
+        "        f\"Ton: {tone}\\n\"\n"
+        "        f\"Hashtagi: {hashtags}\\n\"\n"
+        "        f\"{ctx}\"\n"
+        "        \"Wymagania: krótki hook, 1 insight, CTA, lista hashtagów.\"\n"
+        "    )\n\n"
+    )
+
+    s_new = s[: m.start(2)] + prompt_block + mid2 + tail_marker + s[m.end(3):]
+    p.write_text(s_new, encoding="utf-8")
+
+    print(f"[OK] core/writing.py fixed (backup: {b})")
+    return True
+
+
+def write_advanced_cognitive_engine_py() -> bool:
+    p = CORE / "advanced_cognitive_engine.py"
+    if not p.exists():
+        print("[SKIP] core/advanced_cognitive_engine.py not found")
+        return False
+
+    b = backup(p)
+
+    # Stabilna wersja: działa nawet bez części modułów.
+    content = r'''#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+advanced_cognitive_engine.py — stabilny silnik "Chat (Advanced)".
+
+Cel:
+- Zero SyntaxError, zero import-kill.
+- Async API pod endpoint.
+- Fallbacki gdy brakuje modułów (inner_language / hierarchical_memory / compressor).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Callable, Union
+from datetime import datetime
+import traceback
+
+
+def _safe_str(x: Any) -> str:
+    try:
+        return str(x)
+    except Exception:
+        return "<unprintable>"
+
+
+def _now_iso() -> str:
+    return datetime.utcnow().isoformat() + "Z"
+
+
+@dataclass
+class AdvancedCognitiveResult:
+    response: str
+    metadata: Dict[str, Any]
+    analysis: Dict[str, Any]
+    memory: List[Dict[str, Any]]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "response": self.response,
+            "metadata": self.metadata,
+            "analysis": self.analysis,
+            "memory": self.memory,
+        }
+
+
+class AdvancedCognitiveEngine:
+    """
+    Minimalnie-rozsądny silnik, który:
+    - analizuje input (intencja, entity-like, sentyment prosto),
+    - opcjonalnie odpala inner_language,
+    - opcjonalnie szuka w hierarchical_memory,
+    - składa odpowiedź (lub zostawia to routerowi).
+    """
+
+    def __init__(
+        self,
+        hierarchical_memory: Any = None,
+        inner_language: Any = None,
+        knowledge_compressor: Any = None,
+        llm_call: Optional[Callable[..., Any]] = None,
+        logger: Optional[Callable[[str], None]] = None,
+    ) -> None:
+        self.hierarchical_memory = hierarchical_memory
+        self.inner_language = inner_language
+        self.knowledge_compressor = knowledge_compressor
+        self.llm_call = llm_call
+        self._log = logger or (lambda msg: None)
+
+    async def process(
+        self,
+        user_message: str,
+        conversation_context: Optional[List[Dict[str, Any]]] = None,
+        user_id: Optional[str] = None,
+    ) -> AdvancedCognitiveResult:
+        t0 = datetime.utcnow()
+
+        analysis: Dict[str, Any] = {
+            "intent": "question" if "?" in (user_message or "") else "statement",
+            "tokens": (user_message or "").split(),
+            "entities": [],
+            "sentiment": "neutral",
+        }
+
+        # 1) Inner language (opcjonalnie)
+        inner_out: Optional[Dict[str, Any]] = None
+        try:
+            inner_out = await self._process_inner_language(user_message, conversation_context or [])
+            if isinstance(inner_out, dict):
+                # delikatnie merge
+                analysis.update({k: inner_out.get(k) for k in ("analyzed_intent", "entities", "sentiment") if k in inner_out})
+                analysis["inner_language"] = inner_out
+        except Exception as e:
+            self._log(f"[ADV_ENGINE] inner_language failed: {_safe_str(e)}")
+            analysis["inner_language_error"] = _safe_str(e)
+
+        # 2) Memory search (opcjonalnie)
+        memory_items: List[Dict[str, Any]] = []
+        try:
+            memory_items = await self.search_memory(user_message, user_id=user_id, limit=10)
+        except Exception as e:
+            self._log(f"[ADV_ENGINE] memory search failed: {_safe_str(e)}")
+            analysis["memory_error"] = _safe_str(e)
+
+        # 3) Odpowiedź: jeśli jest llm_call, można złożyć odpowiedź. Jeśli nie, dajemy sensowny fallback.
+        response_text = ""
+        meta: Dict[str, Any] = {
+            "ts": _now_iso(),
+            "engine": "advanced",
+            "dur_ms": int((datetime.utcnow() - t0).total_seconds() * 1000),
+        }
+
+        if self.llm_call:
+            try:
+                system = "Jesteś zaawansowanym asystentem. Odpowiadasz konkretnie, po polsku, bez lania wody."
+                ctx_lines: List[str] = []
+                if memory_items:
+                    ctx_lines.append("[Pamięć]")
+                    for it in memory_items[:5]:
+                        txt = it.get("text") or it.get("content") or it.get("summary") or ""
+                        if txt:
+                            ctx_lines.append(f"- {txt[:400]}")
+                if conversation_context:
+                    ctx_lines.append("[Kontekst rozmowy - ostatnie 3]")
+                    for m in conversation_context[-3:]:
+                        role = m.get("role", "user")
+                        content = (m.get("content") or "")[:800]
+                        ctx_lines.append(f"{role}: {content}")
+
+                user = (user_message or "").strip()
+                prompt = "\n".join(ctx_lines + ["", "Użytkownik:", user]).strip()
+
+                out = self.llm_call(
+                    [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": prompt},
+                    ]
+                )
+                # llm_call może być sync albo async
+                if hasattr(out, "__await__"):
+                    out = await out  # type: ignore[misc]
+
+                response_text = (out or "").strip()
+                if not response_text:
+                    response_text = user
+            except Exception as e:
+                meta["llm_error"] = _safe_str(e)
+                meta["llm_trace"] = traceback.format_exc(limit=3)
+                response_text = (user_message or "").strip()
+        else:
+            # fallback: zwracamy wejście; endpoint zwykle i tak opakuje to w swój format
+            response_text = (user_message or "").strip()
+
+        if not response_text:
+            response_text = "OK"
+
+        meta["dur_ms"] = int((datetime.utcnow() - t0).total_seconds() * 1000)
+
+        return AdvancedCognitiveResult(
+            response=response_text,
+            metadata=meta,
+            analysis=analysis,
+            memory=memory_items,
+        )
+
+    async def _process_inner_language(
+        self,
+        user_message: str,
+        conversation_context: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        context_data = {
+            "conversation_length": len(conversation_context) if conversation_context else 0,
+            "recent_topics": [(m.get("content") or "")[:100] for m in (conversation_context or [])[-3:]],
+            "message_type": "question" if "?" in (user_message or "") else "statement",
+        }
+
+        if self.inner_language:
+            out = self.inner_language.process_natural_language_input(user_message, context_data)
+            if hasattr(out, "__await__"):
+                out = await out  # type: ignore[misc]
+            if isinstance(out, dict):
+                return out
+
+        # Basic fallback
+        return {
+            "analyzed_intent": "general_query",
+            "tokens": (user_message or "").split(),
+            "sentiment": "neutral",
+            "entities": [],
+        }
+
+    async def search_memory(
+        self,
+        query: str,
+        user_id: Optional[str] = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        q = (query or "").strip()
+        if not q:
+            return []
+
+        # Prefer hierarchical memory if it has search_hybrid
+        hm = self.hierarchical_memory
+        if hm and hasattr(hm, "search_hybrid"):
+            out = hm.search_hybrid(query=q, user_id=user_id, max_results=limit)
+            if hasattr(out, "__await__"):
+                out = await out  # type: ignore[misc]
+            if isinstance(out, list):
+                return [x if isinstance(x, dict) else {"text": _safe_str(x)} for x in out]
+
+        # Fallback: try core.memory.ltm_search_hybrid (sync)
+        try:
+            from .memory import ltm_search_hybrid  # type: ignore
+            out2 = ltm_search_hybrid(q, limit=limit)
+            if isinstance(out2, list):
+                return [x if isinstance(x, dict) else {"text": _safe_str(x)} for x in out2]
+        except Exception:
+            pass
+
+        return []
+
+
+_DEFAULT_ENGINE: Optional[AdvancedCognitiveEngine] = None
+
+
+def get_engine() -> AdvancedCognitiveEngine:
+    global _DEFAULT_ENGINE
+    if _DEFAULT_ENGINE is None:
+        _DEFAULT_ENGINE = AdvancedCognitiveEngine()
+    return _DEFAULT_ENGINE
+'''
+    p.write_text(content, encoding="utf-8")
+    print(f"[OK] core/advanced_cognitive_engine.py replaced (backup: {b})")
+    return True
+
+
+def ensure_response_adapter_py() -> bool:
+    p = CORE / "response_adapter.py"
+    if p.exists():
+        print("[OK] core/response_adapter.py already exists")
+        return False
+
+    content = r'''#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+response_adapter.py — adapter odpowiedzi do endpointów.
+
+Minimalny, ale stabilny:
+- Nie rozsypuje importów.
+- Pozwala endpointom opakować dane do spójnego dict.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List
+
+
+def adapt(data: Any) -> Dict[str, Any]:
+    """
+    Adaptuje dowolne dane do dict.
+    Jeśli `data` jest dict -> zwraca as-is.
+    Jeśli jest list/str/inna -> pakuje w {"data": ...}.
+    """
+    if isinstance(data, dict):
+        return data
+    if isinstance(data, list):
+        return {"data": data}
+    if isinstance(data, str):
+        return {"text": data}
+    return {"data": data}
+'''
+    p.write_text(content, encoding="utf-8")
+    print("[OK] core/response_adapter.py created")
+    return True
+
+
+def patch_router_exception_handler() -> int:
+    patched = 0
+    for p in CORE.rglob("*.py"):
+        sp = str(p)
+        if "/__pycache__/" in sp or "/.venv/" in sp or "/venv/" in sp:
+            continue
+
+        s = p.read_text(encoding="utf-8")
+        if "@router.exception_handler" not in s and "# router.exception_handler(" not in s:
+            continue
+
+        b = backup(p)
+
+        s2 = s
+        s2 = re.sub(
+            r"(?m)^\s*@router\.exception_handler\((.*?)\)\s*$",
+            r"# @# router.exception_handler(\1)  # disabled: APIRouter has no exception_handler",
+            s2,
+        )
+        s2 = s2.replace("# router.exception_handler(", "# # router.exception_handler(")
+
+        if s2 != s:
+            p.write_text(s2, encoding="utf-8")
+            patched += 1
+            print(f"[OK] disabled router.exception_handler in {p} (backup: {b})")
+
+    return patched
+
+
+def main() -> int:
+    if not ROOT.exists() or not CORE.exists():
+        die(f"[ERR] expected {CORE} to exist")
+
+    changed = 0
+    if patch_writing_py():
+        changed += 1
+    if write_advanced_cognitive_engine_py():
+        changed += 1
+    if ensure_response_adapter_py():
+        changed += 1
+
+    eh = patch_router_exception_handler()
+    if eh:
+        changed += eh
+
+    print(f"[DONE] patches applied: {changed}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,53 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║          🔧 SKOPIUJ I URUCHOM NA SERWERZE 🔧                         ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+KROK 1: Zaloguj się na serwer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ssh ubuntu@162.19.220.29
+
+
+KROK 2: Uruchom naprawę (JEDNA KOMENDA):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cd /workspace/EHH/EHH && git fetch origin && git checkout github-ready && git pull origin github-ready && bash NAPRAWA_WSZYSTKO.sh
+
+
+CO TO ZROBI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Backup obecnego kodu
+✅ Git pull (najnowszy kod)
+✅ Sprawdzi wszystkie pliki
+✅ Sprawdzi/naprawi .env
+✅ Test importu Python
+✅ Restart serwera
+✅ Sprawdzi logi
+✅ Test wszystkich endpointów
+✅ Pokaże status
+
+
+PO URUCHOMIENIU:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Jeśli skrypt powie "⚠️ brak LLM_API_KEY":
+
+nano .env
+
+Znajdź linię:
+LLM_API_KEY=ZMIEN_MNIE_NA_PRAWDZIWY_KLUCZ
+
+Zmień na (TWÓJ KLUCZ z DeepInfra):
+LLM_API_KEY=w52XW0XN6zoV9hdY8OONhLu6tvnFaXbZ
+
+Zapisz: Ctrl+O, Enter, Ctrl+X
+
+Restart:
+sudo systemctl restart mordzix-ai
+
+
+POTEM DAJ MI ZNAĆ CO WYŚWIETLIŁ SKRYPT!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Skopiuj i wklej cały output tutaj.

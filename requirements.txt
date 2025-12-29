@@ -1,0 +1,90 @@
+# ============================================
+# MORDZIX AI PRO - Requirements
+# Version: 6.0.0 (December 2025)
+# ============================================
+
+# --- Core Framework ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+httpx>=0.27.0
+pydantic>=2.9.0
+jinja2>=3.1.0
+aiofiles>=23.2.0
+starlette>=0.40.0
+python-dotenv>=1.0.0
+orjson>=3.9.0
+
+# --- AI / LLM ---
+openai>=1.52.0
+
+# --- Web Search APIs ---
+# Brave Search (primary) - używa httpx
+# Tavily (secondary)
+tavily-python>=0.3.0
+# DuckDuckGo (fallback)
+duckduckgo-search>=6.2.0
+
+# --- NLP / Language ---
+langdetect>=1.0.9
+regex>=2024.0.0
+ftfy>=6.2.0
+spacy>=3.7.0
+
+# --- Embeddings (optional - dla local embeddings) ---
+numpy>=1.26.0
+scikit-learn>=1.5.0
+tqdm>=4.66.0
+# torch>=2.4.0
+# transformers>=4.44.0
+# sentence-transformers>=2.7.0
+
+# --- Vision / Images ---
+pillow>=10.4.0
+
+# --- PDF Processing ---
+PyMuPDF>=1.24.0
+PyPDF2>=3.0.0
+
+# --- Web Scraping / RAG ---
+requests>=2.32.0
+lxml>=5.3.0
+beautifulsoup4>=4.12.0
+fake-useragent>=1.5.0
+readability-lxml>=0.8.0
+lxml_html_clean
+
+# --- Audio / Speech ---
+pydub>=0.25.0
+soundfile>=0.12.0
+gTTS>=2.5.0
+elevenlabs>=1.0.0
+
+# --- Memory / Database ---
+aiosqlite>=0.20.0
+sqlalchemy>=2.0.0
+sqlite-utils>=3.36
+
+# --- Cache (optional) ---
+redis>=5.0.0
+
+# --- Security / Auth ---
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.9
+pycryptodome>=3.21.0
+cryptography>=43.0.0
+
+# --- Geo / Travel ---
+geopy>=2.4.0
+haversine>=2.9.0
+overpy>=0.6
+
+# --- Image Generation ---
+stability-sdk>=0.8.0
+replicate>=0.28.0
+huggingface-hub>=0.25.0
+
+# --- Development / Testing ---
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+black>=24.0.0
+mypy>=1.11.0

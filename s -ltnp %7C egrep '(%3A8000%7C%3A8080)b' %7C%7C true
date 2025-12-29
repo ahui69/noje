@@ -1,0 +1,19 @@
+[0;1;34m# /etc/systemd/system/mrd-uvicorn.service[0m
+[Unit]
+Description=MRD Uvicorn API (OpenAI-compatible)
+After=network-online.target redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/mrd
+EnvironmentFile=/root/mrd/.env
+Environment=PYTHONPATH=/root/mrd
+ExecStart=/usr/bin/python3 -m uvicorn app:app --host 0.0.0.0 --port 8000 --log-level info
+Restart=always
+RestartSec=2
+KillSignal=SIGINT
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
