@@ -1058,6 +1058,18 @@ def inject_suggestions_to_prompt(base_prompt: str, suggestions: List[Dict[str, A
     """
     return suggestion_generator.inject_suggestion_to_prompt(base_prompt, suggestions)
 
+
+def get_proactive_engine() -> ProactiveSuggestionGenerator:
+    """
+    Zwraca globalny silnik proaktywnych sugestii.
+
+    Funkcja zapewnia jednolity punkt dostępu dla endpointów korzystających z
+    zaawansowanego generatora, bez potrzeby samodzielnej inicjalizacji
+    komponentów zależnych.
+    """
+
+    return suggestion_generator
+
 def get_smart_suggestions(user_message: str, last_ai_response: str = "") -> List[str]:
     """
     Legacy funkcja - zwraca listę prostych sugestii (kompatybilność wsteczna)

@@ -4,10 +4,12 @@
 Prometheus metrics endpoint - monitoring i statystyki
 """
 
+import os
 from fastapi import APIRouter, Response
 from typing import Dict, Any
 
 from core import metrics as core_metrics
+from health_payload import build_health_payload
 
 router = APIRouter()
 
@@ -25,7 +27,7 @@ async def get_prometheus_metrics():
 @router.get("/health")
 async def health_check():
     """Health check dla Prometheus"""
-    return core_metrics.health_payload()
+    return build_health_payload(app_version=os.getenv("APP_VERSION", "unknown"))
 
 @router.get("/stats")
 async def get_stats() -> Dict[str, Any]:
