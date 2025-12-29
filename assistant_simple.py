@@ -348,12 +348,14 @@ async def chat_assistant(req: Request, body: ChatBody) -> Dict[str, Any]:
         msgs = _normalize_messages(body, text, history)
         user_payload = msgs[-1]["content"] if msgs else text
 
+        requested_model = getattr(body, "model", None)
+
         _append_msg(con, sid, body.user_id, "user", user_payload)
         ans = await _llm_chat(
             msgs,
             temperature=body.temperature,
             max_tokens=body.max_tokens,
-            model_override=getattr(body, "model", None),
+            model_override=requested_model,
         )
         _append_msg(con, sid, body.user_id, "assistant", ans)
 
@@ -362,7 +364,7 @@ async def chat_assistant(req: Request, body: ChatBody) -> Dict[str, Any]:
             "session_id": sid,
             "ts": _now(),
             "metadata": {
-                "model": LLM_MODEL,
+                "model": (requested_model or LLM_MODEL),
                 "base_url": LLM_BASE_URL,
                 "history_used": bool(body.use_history),
             },

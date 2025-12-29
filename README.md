@@ -9,6 +9,10 @@
 6. Sprawdź, co realnie się wczytało: `python audit_runtime_routes.py` (drukuje listę ładujących się routerów i pełny wykaz ścieżek).
 7. Endpointy `/health` (app) i `/health` z modułu Prometheus zwracają ten sam, spójny payload (status, wersja, ENV, metryki) – monitorowanie działa identycznie niezależnie od źródła.
 
+### Szybki start (backend + build frontendu)
+- Uruchom: `./start.sh` (tworzy `.venv`, instaluje zależności Pythona, buduje frontend Vite, startuje uvicorn na porcie 8080).
+- Opcjonalne zmienne: `PORT` (domyślnie 8080), `HOST` (domyślnie 0.0.0.0), `SKIP_FRONTEND=1` (pomija budowę frontu, wymaga gotowego `frontend/dist`).
+
 ## Nowy frontend (React + Vite)
 1. Przejdź do `frontend/`.
 2. Zainstaluj zależności: `npm install`.
