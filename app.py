@@ -14,9 +14,13 @@ from openai_compat import router as openai_compat_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from health_payload import build_health_payload
 
 APP_TITLE = "Mordzix AI"
 APP_VERSION = "5.0.0"
+
+# zapewnia spójną wersję dla zależnych modułów (np. health)
+os.environ.setdefault("APP_VERSION", APP_VERSION)
 
 ROOT_DIR = Path(__file__).resolve().parent
 ENV_PATH = ROOT_DIR / ".env"
@@ -28,14 +32,14 @@ def _now() -> float:
     return time.time()
 
 
-def _load_env_file(path: Path) -> None:
-    # nie nadpisuje istniejących zmiennych w środowisku
+def _load_env_file(path: Path) -> bool:
+    """Ładuje zmienne z pliku .env bez nadpisywania istniejących."""
     if not path.exists():
-        return
+        return False
     try:
         txt = path.read_text(encoding="utf-8")
     except Exception:
-        return
+        return False
     for raw in txt.splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
@@ -48,10 +52,13 @@ def _load_env_file(path: Path) -> None:
         if len(v) >= 2 and ((v[0] == v[-1] == '"') or (v[0] == v[-1] == "'")):
             v = v[1:-1]
         os.environ[k] = v
+    return True
 
 
-_load_env_file(ENV_PATH)
-print(f"[CONFIG] Loaded .env from {ENV_PATH}")
+if _load_env_file(ENV_PATH):
+    print(f"[CONFIG] Loaded .env from {ENV_PATH}")
+else:
+    print(f"[CONFIG] No .env file found at {ENV_PATH}")
 
 app = FastAPI(
     title=APP_TITLE, version=APP_VERSION, docs_url="/docs", redoc_url="/redoc"
@@ -72,29 +79,26 @@ app.add_middleware(
 
 @app.get("/health")
 async def health() -> Dict[str, Any]:
-    # pokazuje co realnie jest w env (bez kluczy)
-    return {
-        "status": "healthy",
-        "version": APP_VERSION,
-        "ts": _now(),
-        "env": {
-            "LLM_BASE_URL": (os.getenv("LLM_BASE_URL") or "").strip(),
-            "LLM_MODEL": (os.getenv("LLM_MODEL") or "").strip(),
-            "LLM_API_KEY_set": bool((os.getenv("LLM_API_KEY") or "").strip()),
-            "AUTH_TOKEN_set": bool((os.getenv("AUTH_TOKEN") or "").strip()),
-        },
-    }
+    return build_health_payload(APP_VERSION)
+
+
+ROUTER_ATTR_OVERRIDES: Dict[str, Tuple[str, ...]] = {
+    "writer_pro": ("writer_router", "router"),
+}
 
 
 def _try_import_router(modname: str) -> Tuple[Optional[Any], Optional[str]]:
+    attr_order = ROUTER_ATTR_OVERRIDES.get(modname, ("router",))
     try:
         m = importlib.import_module(modname)
-        r = getattr(m, "router", None)
-        if r is None:
-            return None, "no router attr"
-        return r, None
+        for attr in attr_order:
+            r = getattr(m, attr, None)
+            if r is not None:
+                return r, None
+        return None, f"no router attr (checked: {', '.join(attr_order)})"
     except Exception as e:
-        return None, f"{type(e).__name__}: {str(e)[:220]}"
+        err_text = str(e).replace("\n", " | ")
+        return None, f"{type(e).__name__}: {err_text[:220]}"
 
 
 def _include(router_obj: Any) -> Optional[str]:
@@ -112,11 +116,20 @@ print("=" * 70)
 # root routers
 root_modules = [
     ("assistant_simple", "Chat (Commercial)"),
+    ("assistant_endpoint", "Chat (Legacy Cognitive)",),
     ("stt_endpoint", "STT (Speech-to-Text)"),
     ("tts_endpoint", "TTS (Text-to-Speech)"),
     ("suggestions_endpoint", "Suggestions"),
     ("internal_endpoint", "Internal"),
     ("files_endpoint", "Files (Advanced)"),
+    ("research_endpoint", "Research (Legacy)"),
+    ("prometheus_endpoint", "Metrics (Legacy)"),
+    ("programista_endpoint", "Code Assistant"),
+    ("nlp_endpoint", "NLP"),
+    ("travel_endpoint", "Travel"),
+    ("writing_endpoint", "Writing"),
+    ("psyche_endpoint", "Psyche"),
+    ("writer_pro", "Writer Pro"),
     ("routers", "Admin/Debug"),
 ]
 
@@ -148,6 +161,13 @@ core_modules = [
     ("core.hybrid_search_endpoint", "Hybrid Search [core]"),
     ("core.batch_endpoint", "Batch Processing [core]"),
     ("core.prometheus_endpoint", "Metrics [core]"),
+    ("core.suggestions_endpoint", "Suggestions [core]"),
+    ("core.research_endpoint", "Research [core]"),
+    ("core.admin_endpoint", "Admin [core]"),
+    ("core.hacker_endpoint", "Hacker Assistant [core]"),
+    ("core.psyche_endpoint", "Psyche [core]"),
+    ("core.chat_advanced_endpoint", "Chat Advanced Compat [core]"),
+    ("core.auction_endpoint", "Auction [core]"),
 ]
 
 for mod, name in core_modules:
