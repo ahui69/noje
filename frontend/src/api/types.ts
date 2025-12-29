@@ -1,12 +1,22 @@
+export interface AttachmentRef {
+  file_id?: string;
+  name?: string;
+  filename?: string;
+  path?: string;
+  mime?: string;
+}
+
 export interface ChatRequest {
   message?: string;
   messages?: { role: 'user' | 'assistant' | 'system'; content: string }[];
   session_id?: string;
   user_id?: string;
+  model?: string;
   temperature?: number;
   max_tokens?: number;
   use_history?: boolean;
   system_prompt?: string | null;
+  attachments?: AttachmentRef[];
 }
 
 export interface ChatResponse {

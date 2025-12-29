@@ -7,6 +7,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   ts?: number;
+  attachments?: { file_id?: string; name?: string; filename?: string }[];
 }
 
 export default function MessageList({ messages, onCopy }: { messages: Message[]; onCopy?: (text: string) => void }) {
@@ -33,6 +34,18 @@ export default function MessageList({ messages, onCopy }: { messages: Message[];
               {m.content}
             </ReactMarkdown>
           </div>
+          {m.attachments && m.attachments.length > 0 && (
+            <div className="mt-3 space-y-1 text-xs text-gray-300">
+              <p className="font-semibold text-gray-200">Załączniki</p>
+              <ul className="list-disc list-inside space-y-1">
+                {m.attachments.map((a, i) => (
+                  <li key={`${a.file_id || a.name || i}`} className="truncate">
+                    {a.name || a.filename || a.file_id}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ))}
     </div>

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { streamChat, SSEEvent } from '../api/sse';
-import { ChatRequest, SessionDetail, UploadResponse } from '../api/types';
+import { AttachmentRef, ChatRequest, ChatResponse, SessionDetail, UploadResponse } from '../api/types';
 import MessageList, { Message } from '../components/MessageList';
 import Composer from '../components/Composer';
 import RightPanel from '../components/RightPanel';
@@ -42,11 +42,16 @@ export default function ChatPage() {
   const { currentSessionId, setCurrentSession, drafts, setDraft, clearDraft } = useSessionStore();
   const token = useAuthStore((s) => s.token);
   const apiBase = useSettingsStore((s) => s.apiBase?.trim()) || window.location.origin;
+  const streamEnabled = useSettingsStore((s) => s.stream);
+  const saveDrafts = useSettingsStore((s) => s.saveDrafts);
+  const preferredModel = useSettingsStore((s) => s.model);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<{ id: string; name: string }[]>([]);
   const [streaming, setStreaming] = useState(false);
+  const [titleInput, setTitleInput] = useState('');
+  const [savingTitle, setSavingTitle] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const activeSessionId = sessionId || currentSessionId;
@@ -61,8 +66,10 @@ export default function ChatPage() {
     if (sessionData) {
       setMessages(sessionData.messages as Message[]);
       setCurrentSession(sessionData.session_id || activeSessionId);
+      setTitleInput(sessionData.title || '');
     } else {
       setMessages([]);
+      setTitleInput('');
     }
   }, [sessionData, activeSessionId, setCurrentSession]);
 
@@ -72,49 +79,64 @@ export default function ChatPage() {
     if (draft) setInput(draft);
   }, [activeSessionId, drafts]);
 
+  const attachmentPayload: AttachmentRef[] = attachments.map((a) => ({ file_id: a.id, name: a.name }));
+
   const handleSend = async () => {
     if (!input.trim()) return;
-    const userMsg: Message = { role: 'user', content: input };
+    const userMsg: Message = { role: 'user', content: input, attachments: attachmentPayload };
     const session = activeSessionId;
     const basePayload: ChatRequest = {
       message: input,
       session_id: session,
       user_id: 'web',
       use_history: true,
+      model: preferredModel,
+      attachments: attachmentPayload,
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
-    if (session) clearDraft(session);
+    if (session && saveDrafts) clearDraft(session);
+    setAttachments([]);
 
     setStreaming(true);
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const assistantMsg: Message = { role: 'assistant', content: '' };
-    setMessages((prev) => [...prev, assistantMsg]);
-
     try {
-      await streamChat('/api/chat/assistant/stream', basePayload, (ev: SSEEvent) => {
-        if (ev.event === 'meta') {
-          const sid = ev.data.session_id as string;
-          if (sid && sid !== activeSessionId) {
-            setCurrentSession(sid);
-            navigate(`/app/chat/${sid}`);
+      if (!streamEnabled) {
+        const res = await apiClient.post<ChatResponse>('/api/chat/assistant', basePayload);
+        const sid = res.session_id || session;
+        const assistantMsg: Message = { role: 'assistant', content: res.answer };
+        setMessages((prev) => [...prev, assistantMsg]);
+        if (sid) {
+          setCurrentSession(sid);
+          navigate(`/app/chat/${sid}`);
+        }
+      } else {
+        const assistantMsg: Message = { role: 'assistant', content: '' };
+        setMessages((prev) => [...prev, assistantMsg]);
+        await streamChat('/api/chat/assistant/stream', basePayload, (ev: SSEEvent) => {
+          if (ev.event === 'meta') {
+            const sid = ev.data.session_id as string;
+            if (sid && sid !== activeSessionId) {
+              setCurrentSession(sid);
+              navigate(`/app/chat/${sid}`);
+            }
           }
-        }
-        if (ev.event === 'delta') {
-          assistantMsg.content += String(ev.data || '');
-          setMessages((prev) => {
-            const copy = [...prev];
-            copy[copy.length - 1] = { ...assistantMsg };
-            return copy;
-          });
-        }
-        if (ev.event === 'error') {
-          alert(ev.data);
-        }
-      }, controller.signal);
+          if (ev.event === 'delta') {
+            assistantMsg.content += String(ev.data || '');
+            setMessages((prev) => {
+              const copy = [...prev];
+              copy[copy.length - 1] = { ...assistantMsg };
+              return copy;
+            });
+          }
+          if (ev.event === 'error') {
+            alert(ev.data);
+          }
+        }, controller.signal);
+      }
     } catch (err: any) {
       alert(err.message || 'Stream error');
     } finally {
@@ -144,28 +166,82 @@ export default function ChatPage() {
     setStreaming(false);
   };
 
+  const saveTitleHandler = async () => {
+    if (!activeSessionId) return;
+    setSavingTitle(true);
+    try {
+      await apiClient.post(`/api/chat/sessions/${activeSessionId}/title`, { title: titleInput.trim() || 'Bez tytułu' });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', activeSessionId] });
+    } catch (err: any) {
+      alert(err.message || 'Błąd zapisu tytułu');
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+
+  const deleteSession = async () => {
+    if (!activeSessionId) return;
+    if (!confirm('Usunąć sesję wraz z historią?')) return;
+    try {
+      await apiClient.post(`/api/chat/sessions/${activeSessionId}/delete`, {});
+      setMessages([]);
+      setCurrentSession(undefined);
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      navigate('/app/chat');
+    } catch (err: any) {
+      alert(err.message || 'Błąd usuwania sesji');
+    }
+  };
+
   const messagesWithAttachments = useMemo(() => messages, [messages]);
 
   return (
     <div className="flex flex-1 h-full">
       <div className="flex-1 flex flex-col gap-4 p-6 overflow-hidden">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-400">Strumień SSE z /api/chat/assistant/stream</p>
-            <h1 className="text-2xl font-bold">Czat</h1>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-400">/api/chat/assistant{streamEnabled ? '/stream' : ''}</p>
+            <h1 className="text-2xl font-bold mb-2">Czat</h1>
+            {activeSessionId && (
+              <div className="flex items-center gap-2">
+                <input
+                  className="bg-subtle border border-subtle rounded px-3 py-2 text-sm flex-1"
+                  value={titleInput}
+                  onChange={(e) => setTitleInput(e.target.value)}
+                  placeholder="Tytuł sesji"
+                />
+                <button
+                  onClick={saveTitleHandler}
+                  disabled={savingTitle}
+                  className="px-3 py-2 text-sm rounded border border-subtle hover:bg-subtle/60"
+                >
+                  {savingTitle ? 'Zapisywanie…' : 'Zapisz'}
+                </button>
+                <button
+                  onClick={deleteSession}
+                  className="px-3 py-2 text-sm rounded border border-red-400 text-red-200 hover:bg-red-900/40"
+                >
+                  Usuń
+                </button>
+              </div>
+            )}
           </div>
-          {streaming && (
-            <button onClick={stopStreaming} className="text-sm text-red-300 border border-red-400 px-3 py-1 rounded">
-              Zatrzymaj
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">{streamEnabled ? 'SSE' : 'Sync'}</span>
+            {streaming && (
+              <button onClick={stopStreaming} className="text-sm text-red-300 border border-red-400 px-3 py-1 rounded">
+                Zatrzymaj
+              </button>
+            )}
+          </div>
         </div>
         <MessageList messages={messagesWithAttachments} onCopy={(txt) => navigator.clipboard.writeText(txt)} />
         <Composer
           value={input}
           onChange={(v) => {
             setInput(v);
-            if (activeSessionId) setDraft(activeSessionId, v);
+            if (activeSessionId && saveDrafts) setDraft(activeSessionId, v);
           }}
           onSend={handleSend}
           disabled={streaming}

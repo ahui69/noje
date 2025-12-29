@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
+import { API_BASE } from '../config';
 import { HealthPayload, TTSStatus } from '../api/types';
+import { useSettingsStore } from '../store/settings';
 
 async function fetchHealth(): Promise<HealthPayload> {
   return apiClient.get<HealthPayload>('/health');
@@ -15,7 +17,7 @@ async function fetchSTTProviders(): Promise<{ ok: boolean; providers: any[] }> {
 }
 
 export default function RightPanel() {
-  const apiBase = (window.localStorage.getItem('mrd-settings') && JSON.parse(window.localStorage.getItem('mrd-settings') || '{}').state?.apiBase) || window.location.origin;
+  const apiBase = useSettingsStore((s) => s.apiBase?.trim()) || API_BASE || window.location.origin;
   const { data: health } = useQuery({ queryKey: ['health'], queryFn: fetchHealth, refetchInterval: 20000 });
   const { data: tts } = useQuery({ queryKey: ['tts'], queryFn: fetchTTS, refetchInterval: 60000 });
   const { data: stt } = useQuery({ queryKey: ['stt'], queryFn: fetchSTTProviders, refetchInterval: 60000 });

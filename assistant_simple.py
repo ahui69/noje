@@ -161,19 +161,26 @@ def _llm_headers() -> Dict[str, str]:
         h["Authorization"] = f"Bearer {LLM_API_KEY}"
     return h
 
-def _check_llm_config() -> Optional[str]:
+def _check_llm_config(model_override: Optional[str] = None) -> Optional[str]:
+    target_model = (model_override or LLM_MODEL or "").strip()
     if not LLM_API_KEY:
         return "Brak LLM_API_KEY w .env"
-    if not LLM_MODEL:
+    if not target_model:
         return "Brak LLM_MODEL w .env"
     return None
 
-async def _llm_chat(messages: List[Dict[str, Any]], temperature: float, max_tokens: int) -> str:
-    err = _check_llm_config()
+async def _llm_chat(
+    messages: List[Dict[str, Any]],
+    temperature: float,
+    max_tokens: int,
+    model_override: Optional[str] = None,
+) -> str:
+    err = _check_llm_config(model_override=model_override)
     if err:
         return f"⚠️ {err}"
+    target_model = (model_override or LLM_MODEL).strip()
     payload = {
-        "model": LLM_MODEL,
+        "model": target_model,
         "messages": messages,
         "temperature": float(temperature),
         "max_tokens": int(max_tokens),
@@ -186,14 +193,19 @@ async def _llm_chat(messages: List[Dict[str, Any]], temperature: float, max_toke
         data = r.json()
         return (data.get("choices") or [{}])[0].get("message", {}).get("content", "").strip()
 
-async def _llm_chat_stream_tokens(messages: List[Dict[str, Any]], temperature: float, max_tokens: int) -> AsyncIterator[str]:
-    err = _check_llm_config()
+async def _llm_chat_stream_tokens(
+    messages: List[Dict[str, Any]],
+    temperature: float,
+    max_tokens: int,
+    model_override: Optional[str] = None,
+) -> AsyncIterator[str]:
+    err = _check_llm_config(model_override=model_override)
     if err:
         yield f"⚠️ {err}"
         return
 
     payload = {
-        "model": LLM_MODEL,
+        "model": (model_override or LLM_MODEL).strip(),
         "messages": messages,
         "temperature": float(temperature),
         "max_tokens": int(max_tokens),
@@ -232,6 +244,14 @@ def _sse(event: str, data: Any) -> bytes:
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
+class Attachment(BaseModel):
+    file_id: Optional[str] = None
+    name: Optional[str] = None
+    filename: Optional[str] = None
+    path: Optional[str] = None
+    mime: Optional[str] = None
+
+
 class ChatBody(BaseModel):
     message: Optional[str] = None
     messages: Optional[List[Dict[str, Any]]] = None
@@ -241,6 +261,8 @@ class ChatBody(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2000, ge=1, le=8192)
     use_history: bool = True
+    model: Optional[str] = None
+    attachments: List[Attachment] = Field(default_factory=list)
 
 def _extract_text(body: ChatBody) -> str:
     if body.message and body.message.strip():
@@ -252,6 +274,30 @@ def _extract_text(body: ChatBody) -> str:
             if isinstance(c, str) and c.strip():
                 return c.strip()
     return ""
+
+def _attachments_note(body: ChatBody) -> str:
+    try:
+        if not getattr(body, "attachments", None):
+            return ""
+        details: List[str] = []
+        for att in getattr(body, "attachments", []):
+            if not att:
+                continue
+            name = getattr(att, "name", None) or getattr(att, "filename", None) or getattr(att, "file_id", None) or "plik"
+            mime = getattr(att, "mime", None)
+            path = getattr(att, "path", None)
+            label = name
+            if mime:
+                label += f" ({mime})"
+            if path:
+                label += f" -> {path}"
+            details.append(f"- {label}")
+        if details:
+            return "Załączniki użytkownika:\n" + "\n".join(details)
+    except Exception:
+        return ""
+    return ""
+
 
 def _normalize_messages(body: ChatBody, text: str, history: List[Dict[str, str]]) -> List[Dict[str, Any]]:
     msgs: List[Dict[str, Any]] = []
@@ -278,7 +324,12 @@ def _normalize_messages(body: ChatBody, text: str, history: List[Dict[str, str]]
             base = [x for x in msgs if x.get("role") == "system"]
             return base + cleaned
 
-    msgs.append({"role": "user", "content": text})
+    attachment_note = _attachments_note(body)
+    user_text = text
+    if attachment_note:
+        user_text = f"{text}\n\n{attachment_note}"
+
+    msgs.append({"role": "user", "content": user_text})
     return msgs
 
 @router.post("/assistant")
@@ -295,9 +346,15 @@ async def chat_assistant(req: Request, body: ChatBody) -> Dict[str, Any]:
         sid = _ensure_session(con, body.user_id, body.session_id)
         history = _load_context(con, sid, limit=30) if body.use_history else []
         msgs = _normalize_messages(body, text, history)
+        user_payload = msgs[-1]["content"] if msgs else text
 
-        _append_msg(con, sid, body.user_id, "user", text)
-        ans = await _llm_chat(msgs, temperature=body.temperature, max_tokens=body.max_tokens)
+        _append_msg(con, sid, body.user_id, "user", user_payload)
+        ans = await _llm_chat(
+            msgs,
+            temperature=body.temperature,
+            max_tokens=body.max_tokens,
+            model_override=getattr(body, "model", None),
+        )
         _append_msg(con, sid, body.user_id, "assistant", ans)
 
         return {
@@ -486,6 +543,9 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
 
     if not base_url:
         base_url = "https://api.deepinfra.com/v1/openai"
+    requested_model = getattr(body, "model", None)
+    if isinstance(requested_model, str) and requested_model.strip():
+        model = requested_model.strip()
     if not model:
         model = "NousResearch/Hermes-3-Llama-3.1-405B"
 
@@ -535,6 +595,7 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
         else:
             cleaned = [{"role": "user", "content": " "}]
 
+    attachment_note = _attachments_note(body)
     messages: List[Dict[str, str]] = []
     if sys_prompt:
         messages.append({"role": "system", "content": sys_prompt})
@@ -548,6 +609,12 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
                 messages.extend(history_msgs)
     except Exception:
         pass
+
+    if attachment_note:
+        if cleaned and cleaned[-1].get("role") == "user":
+            cleaned[-1]["content"] = (cleaned[-1].get("content", "") + "\n\n" + attachment_note).strip()
+        else:
+            cleaned.append({"role": "user", "content": attachment_note})
 
     messages.extend([m for m in cleaned if m.get("role") != "system"])
 
