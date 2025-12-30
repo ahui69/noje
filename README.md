@@ -13,12 +13,12 @@
 - Uruchom: `./start.sh` (tworzy `.venv`, instaluje zależności Pythona, buduje frontend Vite, startuje uvicorn na porcie 8080).
 - Skrypt budując frontend ustawia `VITE_API_BASE=http://$HOST:$PORT`, więc UI i API domyślnie działają na tym samym porcie.
 - Opcjonalne zmienne: `PORT` (domyślnie 8080), `HOST` (domyślnie 0.0.0.0), `SKIP_FRONTEND=1` (pomija budowę frontu, wymaga gotowego `frontend/dist`).
-- Zmienne środowiskowe frontendu (odczytywane podczas buildu): `VITE_API_BASE` (adres backendu), `VITE_AUTH_TOKEN` (domyślny Bearer do UI), `VITE_DEFAULT_MODEL` (np. nazwę modelu z `/v1/models`), `VITE_STREAM_DEFAULT` (`true`/`false`), `VITE_SAVE_DRAFTS` (`true`/`false`).
+- Zmienne środowiskowe frontendu (odczytywane podczas buildu): `VITE_API_BASE` (adres backendu), `VITE_PROXY_TARGET` (cel proxy dev, domyślnie `http://localhost:8080`), `VITE_AUTH_TOKEN` (domyślny Bearer do UI), `VITE_DEFAULT_MODEL` (np. nazwę modelu z `/v1/models`), `VITE_STREAM_DEFAULT` (`true`/`false`), `VITE_SAVE_DRAFTS` (`true`/`false`).
 
 ## Nowy frontend (React + Vite)
 1. Przejdź do `frontend/`.
 2. Zainstaluj zależności: `npm install`.
-3. Uruchom dev server: `npm run dev` (domyślnie `http://localhost:5173`).
+3. Uruchom dev server: `npm run dev` (domyślnie `http://localhost:5173`); jeśli backend działa na innym adresie, ustaw `VITE_PROXY_TARGET=http://host:port`, wtedy wywołania `/api`, `/v1`, `/health`, `/metrics` będą przekierowane z devservera do backendu bez błędów CORS i `ERR_CONNECTION_REFUSED`.
 4. Zaloguj się tokenem Bearer (`AUTH_TOKEN` z backendu) na `/login`, następnie korzystaj z `/app/chat` (SSE) i `/app/settings`.
 
 ### Kluczowe endpointy używane przez frontend
