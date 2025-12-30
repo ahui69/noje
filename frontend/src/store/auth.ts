@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { DEFAULT_TOKEN } from '../config';
 
 interface AuthState {
   token: string;
@@ -9,7 +10,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: '',
+      token: DEFAULT_TOKEN,
       setToken: (token: string) => set({ token }),
     }),
     { name: 'mrd-auth' },
