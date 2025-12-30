@@ -57,6 +57,7 @@ export default function ChatPage() {
   const [titleInput, setTitleInput] = useState('');
   const [savingTitle, setSavingTitle] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const [errorBanner, setErrorBanner] = useState('');
 
   const activeSessionId = sessionId || currentSessionId;
 
@@ -87,6 +88,7 @@ export default function ChatPage() {
 
   const handleSend = async () => {
     if (!input.trim()) return;
+    setErrorBanner('');
     const userMsg: Message = { role: 'user', content: input, attachments: attachmentPayload };
     const session = activeSessionId;
     const basePayload: ChatRequest = {
@@ -137,12 +139,12 @@ export default function ChatPage() {
             });
           }
           if (ev.event === 'error') {
-            alert(ev.data);
+            setErrorBanner(String(ev.data || 'Błąd strumienia'));
           }
         }, controller.signal);
       }
     } catch (err: any) {
-      alert(err.message || 'Stream error');
+      setErrorBanner(err.message || 'Błąd komunikacji');
     } finally {
       setStreaming(false);
       abortRef.current = null;
@@ -159,7 +161,7 @@ export default function ChatPage() {
       const mapped = res.map((r) => ({ id: r.file_id, name: r.filename }));
       setAttachments((prev) => [...prev, ...mapped]);
     } catch (err: any) {
-      alert(err.message || 'Upload error');
+      setErrorBanner(err.message || 'Błąd uploadu');
     } finally {
       setStreaming(false);
     }
@@ -178,7 +180,7 @@ export default function ChatPage() {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['session', activeSessionId] });
     } catch (err: any) {
-      alert(err.message || 'Błąd zapisu tytułu');
+      setErrorBanner(err.message || 'Błąd zapisu tytułu');
     } finally {
       setSavingTitle(false);
     }
@@ -194,15 +196,27 @@ export default function ChatPage() {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       navigate('/app/chat');
     } catch (err: any) {
-      alert(err.message || 'Błąd usuwania sesji');
+      setErrorBanner(err.message || 'Błąd usuwania sesji');
     }
   };
 
   const messagesWithAttachments = useMemo(() => messages, [messages]);
 
   return (
-    <div className="flex flex-1 h-full flex-col lg:flex-row">
-      <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 overflow-hidden">
+    <div className="flex flex-1 h-full flex-col lg:flex-row w-full max-w-full">
+      <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 overflow-hidden max-w-full">
+        {errorBanner && (
+          <div className="rounded-md border border-red-500/60 bg-red-900/30 text-sm text-red-100 px-4 py-3 flex items-start justify-between gap-3">
+            <span>{errorBanner}</span>
+            <button
+              className="text-xs underline hover:no-underline"
+              onClick={() => setErrorBanner('')}
+              aria-label="Zamknij komunikat błędu"
+            >
+              Zamknij
+            </button>
+          </div>
+        )}
         <div className="flex items-start flex-wrap justify-between gap-4">
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400">/api/chat/assistant{streamEnabled ? '/stream' : ''}</p>

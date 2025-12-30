@@ -46,7 +46,7 @@ export default function Sidebar({ isOpen, onClose, isDesktop }: SidebarProps) {
       className={
         isDesktop
           ? 'w-72 bg-panel border-r border-subtle/60 flex flex-col'
-          : 'fixed inset-y-0 left-0 w-72 bg-panel border-r border-subtle/60 flex flex-col z-40 shadow-xl'
+          : 'fixed inset-y-0 left-0 w-72 max-w-[calc(100vw-48px)] bg-panel border-r border-subtle/60 flex flex-col z-40 shadow-xl'
       }
     >
       <div className="p-4 flex items-center justify-between border-b border-subtle/60">

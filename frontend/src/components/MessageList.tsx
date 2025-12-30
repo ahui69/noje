@@ -29,7 +29,7 @@ export default function MessageList({ messages, onCopy }: { messages: Message[];
               </button>
             )}
           </div>
-          <div className="prose prose-invert max-w-none text-sm">
+          <div className="prose prose-invert max-w-none text-sm break-words whitespace-pre-wrap prose-pre:whitespace-pre-wrap prose-code:break-words">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
               {m.content}
             </ReactMarkdown>

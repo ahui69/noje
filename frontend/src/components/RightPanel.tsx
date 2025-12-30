@@ -37,7 +37,7 @@ export default function RightPanel({ isOpen, onClose, isDesktop }: RightPanelPro
       className={
         isDesktop
           ? 'w-80 border-l border-subtle/60 bg-panel p-4 space-y-4'
-          : 'fixed inset-y-0 right-0 w-80 border-l border-subtle/60 bg-panel p-4 space-y-4 z-40 shadow-xl'
+          : 'fixed inset-y-0 right-0 w-80 max-w-[calc(100vw-48px)] border-l border-subtle/60 bg-panel p-4 space-y-4 z-40 shadow-xl'
       }
     >
       <div className="flex items-center justify-between">
