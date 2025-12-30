@@ -3,6 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuthStore } from '../store/auth';
 import RightPanel from '../components/RightPanel';
+import { API_BASE } from '../config';
+import { buildApiUrl } from '../api/client';
+import { useSettingsStore } from '../store/settings';
 
 export default function AppShell() {
   const navigate = useNavigate();
@@ -13,6 +16,9 @@ export default function AppShell() {
   const [isDesktop, setIsDesktop] = useState(initialDesktop);
   const [sidebarOpen, setSidebarOpen] = useState(initialDesktop);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [connectionError, setConnectionError] = useState('');
+  const apiBase = useSettingsStore((s) => s.apiBase?.trim()) || buildApiUrl(API_BASE, '');
+  const token = useAuthStore((s) => s.token);
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1024px)');
@@ -43,6 +49,33 @@ export default function AppShell() {
       window.removeEventListener('keydown', escHandler);
     };
   }, []);
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate, token]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const ping = async () => {
+      try {
+        const res = await fetch(buildApiUrl(apiBase, '/health'));
+        if (!res.ok) throw new Error(`${res.status}`);
+        if (!cancelled) setConnectionError('');
+      } catch (err: any) {
+        if (!cancelled) setConnectionError(`Healthcheck failed: ${err?.message || 'brak odpowiedzi'}`);
+      }
+    };
+
+    ping();
+    const id = window.setInterval(ping, 20000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [apiBase]);
 
   useEffect(() => {
     if (!isDesktop && (sidebarOpen || panelOpen)) {
@@ -77,6 +110,18 @@ export default function AppShell() {
 
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isDesktop={isDesktop} />
       <main className="flex-1 flex flex-col bg-bg relative z-10 w-full max-w-full">
+        {connectionError && (
+          <div className="bg-red-900/70 text-red-100 border-b border-red-500/60 px-4 py-2 text-sm flex items-center justify-between">
+            <span>{connectionError}</span>
+            <button
+              className="text-xs underline hover:no-underline"
+              onClick={() => setConnectionError('')}
+              aria-label="Ukryj komunikat o błędzie"
+            >
+              Zamknij
+            </button>
+          </div>
+        )}
         <header className="h-14 border-b border-subtle/60 px-4 flex items-center justify-between bg-panel sticky top-0 z-20">
           <div className="flex items-center gap-3 text-sm text-gray-300">
             <button

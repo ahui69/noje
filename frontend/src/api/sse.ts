@@ -1,6 +1,7 @@
 import { API_BASE } from '../config';
 import { useAuthStore } from '../store/auth';
 import { useSettingsStore } from '../store/settings';
+import { buildApiUrl } from './client';
 
 export type SSEEvent = { event: string; data: any };
 
@@ -18,7 +19,7 @@ export async function streamChat(
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${base}${path}`, {
+  const res = await fetch(buildApiUrl(base, path), {
     method: 'POST',
     headers,
     body: JSON.stringify(body),

@@ -2,10 +2,20 @@ import { API_BASE } from '../config';
 import { useAuthStore } from '../store/auth';
 import { useSettingsStore } from '../store/settings';
 
+export function buildApiUrl(base: string, path: string): string {
+  const trimmedBase = (base || '').replace(/\/$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (trimmedBase.endsWith('/api') && normalizedPath.startsWith('/api/')) {
+    return `${trimmedBase}${normalizedPath.replace(/^\/api/, '')}`;
+  }
+  return `${trimmedBase}${normalizedPath}`;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = useAuthStore.getState().token;
   const customBase = useSettingsStore.getState().apiBase?.trim();
-  const base = customBase || API_BASE;
+  const base = buildApiUrl(customBase || API_BASE, '');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> | undefined),
@@ -14,7 +24,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${base}${path}`, {
+  const res = await fetch(buildApiUrl(base, path), {
     ...options,
     headers,
   });
