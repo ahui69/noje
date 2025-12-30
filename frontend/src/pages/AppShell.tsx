@@ -14,7 +14,7 @@ export default function AppShell() {
     [],
   );
   const [isDesktop, setIsDesktop] = useState(initialDesktop);
-  const [sidebarOpen, setSidebarOpen] = useState(initialDesktop);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [connectionError, setConnectionError] = useState('');
   const apiBase = useSettingsStore((s) => s.apiBase?.trim()) || buildApiUrl(API_BASE, '');
@@ -24,10 +24,7 @@ export default function AppShell() {
     const media = window.matchMedia('(min-width: 1024px)');
     const update = (matches: boolean) => {
       setIsDesktop(matches);
-      if (matches) {
-        setSidebarOpen(true);
-        setPanelOpen(false);
-      } else {
+      if (!matches) {
         setSidebarOpen(false);
         setPanelOpen(false);
       }

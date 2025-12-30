@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/auth';
 import { useSettingsStore } from '../store/settings';
+import { ModelList } from '../api/types';
+import { apiClient } from '../api/client';
 
 export default function SettingsPage() {
   const auth = useAuthStore();
@@ -10,6 +13,26 @@ export default function SettingsPage() {
   const [model, setModel] = useState(settings.model);
   const [stream, setStream] = useState(settings.stream);
   const [saveDrafts, setSaveDrafts] = useState(settings.saveDrafts);
+  const [saved, setSaved] = useState('');
+
+  const {
+    data: modelList,
+    isLoading: loadingModels,
+    error: modelsError,
+  } = useQuery({
+    queryKey: ['models', token],
+    queryFn: () => apiClient.get<ModelList>('/v1/models'),
+    refetchInterval: 60000,
+    enabled: !!token,
+  });
+
+  const modelOptions = useMemo(() => modelList?.data || [], [modelList]);
+
+  useEffect(() => {
+    if (modelOptions.length > 0 && (!model || model === 'default')) {
+      setModel(modelOptions[0].id);
+    }
+  }, [modelOptions, model]);
 
   const save = () => {
     auth.setToken(token.trim());
@@ -17,7 +40,8 @@ export default function SettingsPage() {
     settings.setModel(model.trim() || 'default');
     settings.setStream(stream);
     settings.setSaveDrafts(saveDrafts);
-    alert('Zapisano');
+    setSaved('Zapisano ustawienia.');
+    setTimeout(() => setSaved(''), 2500);
   };
 
   return (
@@ -48,13 +72,30 @@ export default function SettingsPage() {
         </div>
         <div className="border border-subtle rounded-lg p-4 space-y-3 bg-panel">
           <h2 className="font-semibold">Model</h2>
+          {loadingModels && <p className="text-xs text-gray-400">Ładowanie modeli…</p>}
+          {modelsError && (
+            <p className="text-xs text-red-400">Błąd pobierania modeli: {(modelsError as Error).message}</p>
+          )}
+          {modelOptions.length > 0 && (
+            <select
+              className="w-full bg-subtle border border-subtle rounded px-3 py-2 text-sm"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            >
+              {modelOptions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.id}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             className="w-full bg-subtle border border-subtle rounded px-3 py-2"
             placeholder="np. NousResearch/Hermes-3"
             value={model}
             onChange={(e) => setModel(e.target.value)}
           />
-          <p className="text-xs text-gray-400">Przekazywany do backendu jako preferowany model</p>
+          <p className="text-xs text-gray-400">Model preferowany przez frontend; pobierany z /v1/models lub wpisany ręcznie.</p>
         </div>
         <div className="border border-subtle rounded-lg p-4 space-y-3 bg-panel">
           <h2 className="font-semibold">Streaming i drafty</h2>
@@ -69,9 +110,12 @@ export default function SettingsPage() {
           <p className="text-xs text-gray-400">Wyłączenie streamingu przełączy czat na tryb synchroniczny</p>
         </div>
       </div>
-      <button onClick={save} className="px-4 py-2 rounded bg-accent text-white font-semibold">
-        Zapisz
-      </button>
+      <div className="flex items-center gap-3">
+        <button onClick={save} className="px-4 py-2 rounded bg-accent text-white font-semibold">
+          Zapisz
+        </button>
+        {saved && <span className="text-xs text-green-300">{saved}</span>}
+      </div>
     </div>
   );
 }

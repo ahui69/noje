@@ -30,6 +30,18 @@ export interface ChatResponse {
   };
 }
 
+export interface ModelItem {
+  id: string;
+  object: string;
+  created?: number;
+  owned_by?: string;
+}
+
+export interface ModelList {
+  object: 'list';
+  data: ModelItem[];
+}
+
 export interface SessionSummary {
   id: string;
   user_id: string;

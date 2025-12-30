@@ -205,7 +205,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-1 h-full flex-col lg:flex-row w-full max-w-full">
-      <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 overflow-hidden max-w-full">
+      <div className="flex-1 flex flex-col gap-4 p-4 md:p-6 overflow-hidden max-w-6xl mx-auto w-full">
         {errorBanner && (
           <div className="rounded-md border border-red-500/60 bg-red-900/30 text-sm text-red-100 px-4 py-3 flex items-start justify-between gap-3">
             <span>{errorBanner}</span>
@@ -218,14 +218,17 @@ export default function ChatPage() {
             </button>
           </div>
         )}
-        <div className="flex items-start flex-wrap justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400">/api/chat/assistant{streamEnabled ? '/stream' : ''}</p>
-            <h1 className="text-2xl font-bold mb-2">Czat</h1>
+        <div className="flex items-start flex-wrap justify-between gap-4 rounded-lg border border-subtle bg-panel/80 px-4 py-3 shadow-sm">
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span>Endpoint:</span>
+              <span className="px-2 py-1 rounded bg-subtle/70 border border-subtle/70">/api/chat/assistant{streamEnabled ? '/stream' : ''}</span>
+            </div>
+            <h1 className="text-2xl font-bold">Czat</h1>
             {activeSessionId && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <input
-                  className="bg-subtle border border-subtle rounded px-3 py-2 text-sm flex-1"
+                  className="bg-subtle border border-subtle rounded px-3 py-2 text-sm flex-1 min-w-[220px]"
                   value={titleInput}
                   onChange={(e) => setTitleInput(e.target.value)}
                   placeholder="Tytuł sesji"
