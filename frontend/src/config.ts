@@ -11,8 +11,10 @@ const parseBoolean = (val: any, fallback: boolean): boolean => {
   return fallback;
 };
 
+const envBase = (metaEnv.VITE_API_BASE as string | undefined)?.trim();
+const sanitizedEnvBase = envBase && /^https?:\/\/0\.0\.0\.0/i.test(envBase) ? '' : envBase;
 const resolvedBase =
-  (metaEnv.VITE_API_BASE as string | undefined) ||
+  sanitizedEnvBase ||
   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080');
 
 export const API_BASE = resolvedBase.replace(/\/$/, '');

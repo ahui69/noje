@@ -38,8 +38,11 @@ pip install --upgrade pip
 pip install -r "$ROOT_DIR/requirements.txt"
 
 if [ "${SKIP_FRONTEND:-0}" != "1" ]; then
-  export VITE_API_BASE="${VITE_API_BASE:-http://$HOST:$PORT}"
-  info "Buduję frontend z bazowym API=$VITE_API_BASE"
+  if [ -n "${VITE_API_BASE:-}" ]; then
+    info "Buduję frontend z bazowym API=${VITE_API_BASE}"
+  else
+    info "Buduję frontend – VITE_API_BASE nie ustawione, UI użyje originu serwującego"
+  fi
   info "Instaluję zależności frontendu (npm ci)"
   (cd "$FRONTEND_DIR" && npm ci --no-audit)
 

@@ -11,9 +11,9 @@
 
 ### Szybki start (backend + build frontendu)
 - Uruchom: `./start.sh` (tworzy `.venv`, instaluje zależności Pythona, buduje frontend Vite, startuje uvicorn na porcie 8080).
-- Skrypt budując frontend ustawia `VITE_API_BASE=http://$HOST:$PORT`, więc UI i API domyślnie działają na tym samym porcie.
+- Skrypt nie nadpisuje już `VITE_API_BASE` – jeśli jej nie ustawisz, frontend użyje originu serwującego (np. publiczny adres serwera), dzięki czemu działa poprawnie na urządzeniach mobilnych.
 - Opcjonalne zmienne: `PORT` (domyślnie 8080), `HOST` (domyślnie 0.0.0.0), `SKIP_FRONTEND=1` (pomija budowę frontu, wymaga gotowego `frontend/dist`).
-- Zmienne środowiskowe frontendu (odczytywane podczas buildu): `VITE_API_BASE` (adres backendu), `VITE_PROXY_TARGET` (cel proxy dev, domyślnie `http://localhost:8080`), `VITE_AUTH_TOKEN` (domyślny Bearer do UI), `VITE_DEFAULT_MODEL` (np. nazwę modelu z `/v1/models`), `VITE_STREAM_DEFAULT` (`true`/`false`), `VITE_SAVE_DRAFTS` (`true`/`false`).
+- Zmienne środowiskowe frontendu (odczytywane podczas buildu): `VITE_API_BASE` (adres backendu, ustaw tylko gdy chcesz wymusić inny niż origin), `VITE_PROXY_TARGET` (cel proxy dev, domyślnie `http://localhost:8080`), `VITE_AUTH_TOKEN` (domyślny Bearer do UI), `VITE_DEFAULT_MODEL` (np. nazwę modelu z `/v1/models`), `VITE_STREAM_DEFAULT` (`true`/`false`), `VITE_SAVE_DRAFTS` (`true`/`false`).
 
 ## Nowy frontend (React + Vite)
 1. Przejdź do `frontend/`.
