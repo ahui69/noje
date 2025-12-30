@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient, buildApiUrl } from '../api/client';
+import { apiClient, buildApiUrl, resolveApiBase } from '../api/client';
 import { API_BASE } from '../config';
 import { HealthPayload, TTSStatus } from '../api/types';
 import { useSettingsStore } from '../store/settings';
@@ -23,10 +23,10 @@ interface RightPanelProps {
 }
 
 export default function RightPanel({ isOpen, onClose, isDesktop }: RightPanelProps) {
-  const apiBase = buildApiUrl(useSettingsStore((s) => s.apiBase?.trim()) || API_BASE || window.location.origin, '');
-  const { data: health } = useQuery({ queryKey: ['health'], queryFn: fetchHealth, refetchInterval: 20000 });
-  const { data: tts } = useQuery({ queryKey: ['tts'], queryFn: fetchTTS, refetchInterval: 60000 });
-  const { data: stt } = useQuery({ queryKey: ['stt'], queryFn: fetchSTTProviders, refetchInterval: 60000 });
+  const apiBase = resolveApiBase(useSettingsStore((s) => s.apiBase?.trim()) || API_BASE || window.location.origin);
+  const { data: health } = useQuery({ queryKey: ['health', apiBase], queryFn: fetchHealth, refetchInterval: 20000 });
+  const { data: tts } = useQuery({ queryKey: ['tts', apiBase], queryFn: fetchTTS, refetchInterval: 60000 });
+  const { data: stt } = useQuery({ queryKey: ['stt', apiBase], queryFn: fetchSTTProviders, refetchInterval: 60000 });
 
   if (!isDesktop && !isOpen) {
     return null;

@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar';
 import { useAuthStore } from '../store/auth';
 import RightPanel from '../components/RightPanel';
 import { API_BASE } from '../config';
-import { buildApiUrl } from '../api/client';
+import { buildApiUrl, resolveApiBase } from '../api/client';
 import { useSettingsStore } from '../store/settings';
 
 export default function AppShell() {
@@ -17,7 +17,7 @@ export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [connectionError, setConnectionError] = useState('');
-  const apiBase = useSettingsStore((s) => s.apiBase?.trim()) || buildApiUrl(API_BASE, '');
+  const apiBase = resolveApiBase(useSettingsStore((s) => s.apiBase?.trim()) || API_BASE);
   const token = useAuthStore((s) => s.token);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient, buildApiUrl } from '../api/client';
+import { apiClient, buildApiUrl, resolveApiBase } from '../api/client';
 import { API_BASE } from '../config';
 import { streamChat, SSEEvent } from '../api/sse';
 import { AttachmentRef, ChatRequest, ChatResponse, SessionDetail, UploadResponse } from '../api/types';
@@ -46,7 +46,7 @@ export default function ChatPage() {
   const queryClient = useQueryClient();
   const { currentSessionId, setCurrentSession, drafts, setDraft, clearDraft } = useSessionStore();
   const token = useAuthStore((s) => s.token);
-  const apiBase = useSettingsStore((s) => s.apiBase?.trim()) || buildApiUrl(API_BASE, '');
+  const apiBase = resolveApiBase(useSettingsStore((s) => s.apiBase?.trim()) || API_BASE);
   const streamEnabled = useSettingsStore((s) => s.stream);
   const saveDrafts = useSettingsStore((s) => s.saveDrafts);
   const preferredModel = useSettingsStore((s) => s.model);

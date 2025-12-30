@@ -12,10 +12,15 @@ export function buildApiUrl(base: string, path: string): string {
   return `${trimmedBase}${normalizedPath}`;
 }
 
+export function resolveApiBase(customBase?: string): string {
+  const base = customBase && customBase.trim().length > 0 ? customBase.trim() : API_BASE;
+  return buildApiUrl(base, '');
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = useAuthStore.getState().token;
   const customBase = useSettingsStore.getState().apiBase?.trim();
-  const base = buildApiUrl(customBase || API_BASE, '');
+  const base = resolveApiBase(customBase);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> | undefined),

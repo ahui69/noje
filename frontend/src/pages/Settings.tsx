@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/auth';
 import { useSettingsStore } from '../store/settings';
 import { ModelList } from '../api/types';
-import { apiClient } from '../api/client';
+import { apiClient, buildApiUrl, resolveApiBase } from '../api/client';
+import { API_BASE } from '../config';
 
 export default function SettingsPage() {
   const auth = useAuthStore();
@@ -14,13 +15,15 @@ export default function SettingsPage() {
   const [stream, setStream] = useState(settings.stream);
   const [saveDrafts, setSaveDrafts] = useState(settings.saveDrafts);
   const [saved, setSaved] = useState('');
+  const [testResult, setTestResult] = useState('');
+  const [testing, setTesting] = useState(false);
 
   const {
     data: modelList,
     isLoading: loadingModels,
     error: modelsError,
   } = useQuery({
-    queryKey: ['models', token],
+    queryKey: ['models', token, settings.apiBase],
     queryFn: () => apiClient.get<ModelList>('/v1/models'),
     refetchInterval: 60000,
     enabled: !!token,
@@ -42,6 +45,26 @@ export default function SettingsPage() {
     settings.setSaveDrafts(saveDrafts);
     setSaved('Zapisano ustawienia.');
     setTimeout(() => setSaved(''), 2500);
+  };
+
+  const testConnection = async () => {
+    setTesting(true);
+    setTestResult('');
+    const base = resolveApiBase(apiBase || API_BASE);
+    const headers: Record<string, string> = token.trim() ? { Authorization: `Bearer ${token.trim()}` } : {};
+
+    try {
+      const health = await fetch(buildApiUrl(base, '/health'), { headers });
+      if (!health.ok) throw new Error(`Healthcheck HTTP ${health.status}`);
+      const modelsResp = await fetch(buildApiUrl(base, '/v1/models'), { headers });
+      if (!modelsResp.ok) throw new Error(`Models HTTP ${modelsResp.status}`);
+      await modelsResp.json();
+      setTestResult(`Połączenie OK (${base})`);
+    } catch (err: any) {
+      setTestResult(`Błąd połączenia: ${err?.message || 'brak odpowiedzi'}`);
+    } finally {
+      setTesting(false);
+    }
   };
 
   return (
@@ -110,11 +133,19 @@ export default function SettingsPage() {
           <p className="text-xs text-gray-400">Wyłączenie streamingu przełączy czat na tryb synchroniczny</p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <button onClick={save} className="px-4 py-2 rounded bg-accent text-white font-semibold">
           Zapisz
         </button>
+        <button
+          onClick={testConnection}
+          disabled={testing}
+          className="px-4 py-2 rounded border border-subtle text-sm hover:bg-subtle/60 disabled:opacity-60"
+        >
+          {testing ? 'Testowanie…' : 'Przetestuj połączenie'}
+        </button>
         {saved && <span className="text-xs text-green-300">{saved}</span>}
+        {testResult && <span className="text-xs text-gray-200">{testResult}</span>}
       </div>
     </div>
   );
