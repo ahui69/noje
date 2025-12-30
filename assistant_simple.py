@@ -90,6 +90,14 @@ def _db() -> sqlite3.Connection:
             FOREIGN KEY(session_id) REFERENCES sessions(id)
         )
     """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS session_meta (
+            session_id TEXT PRIMARY KEY,
+            title TEXT,
+            updated_at REAL NOT NULL,
+            FOREIGN KEY(session_id) REFERENCES sessions(id)
+        )
+    """)
     con.commit()
     return con
 
@@ -104,6 +112,10 @@ def _ensure_session(con: sqlite3.Connection, user_id: str, session_id: Optional[
             "INSERT INTO sessions(id,user_id,created_at,updated_at) VALUES(?,?,?,?)",
             (sid, user_id, now, now),
         )
+        con.execute(
+            "INSERT OR IGNORE INTO session_meta(session_id,title,updated_at) VALUES(?,?,?)",
+            (sid, None, now),
+        )
     con.commit()
     return sid
 
@@ -112,6 +124,24 @@ def _append_msg(con: sqlite3.Connection, session_id: str, user_id: str, role: st
         "INSERT INTO messages(id,session_id,user_id,role,content,ts) VALUES(?,?,?,?,?,?)",
         (str(uuid.uuid4()), session_id, user_id, role, content, _now()),
     )
+    con.execute("UPDATE sessions SET updated_at=? WHERE id=?", (_now(), session_id))
+    con.commit()
+
+
+def _session_title(con: sqlite3.Connection, session_id: str) -> Optional[str]:
+    row = con.execute("SELECT title FROM session_meta WHERE session_id=?", (session_id,)).fetchone()
+    if row:
+        return row[0]
+    return None
+
+
+def _set_session_title(con: sqlite3.Connection, session_id: str, title: str) -> None:
+    now = _now()
+    con.execute(
+        "INSERT INTO session_meta(session_id,title,updated_at) VALUES(?,?,?) ON CONFLICT(session_id) DO UPDATE SET title=excluded.title, updated_at=excluded.updated_at",
+        (session_id, title, now),
+    )
+    con.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id))
     con.commit()
 
 def _load_context(con: sqlite3.Connection, session_id: str, limit: int = 30) -> List[Dict[str, str]]:
@@ -131,19 +161,26 @@ def _llm_headers() -> Dict[str, str]:
         h["Authorization"] = f"Bearer {LLM_API_KEY}"
     return h
 
-def _check_llm_config() -> Optional[str]:
+def _check_llm_config(model_override: Optional[str] = None) -> Optional[str]:
+    target_model = (model_override or LLM_MODEL or "").strip()
     if not LLM_API_KEY:
         return "Brak LLM_API_KEY w .env"
-    if not LLM_MODEL:
+    if not target_model:
         return "Brak LLM_MODEL w .env"
     return None
 
-async def _llm_chat(messages: List[Dict[str, Any]], temperature: float, max_tokens: int) -> str:
-    err = _check_llm_config()
+async def _llm_chat(
+    messages: List[Dict[str, Any]],
+    temperature: float,
+    max_tokens: int,
+    model_override: Optional[str] = None,
+) -> str:
+    err = _check_llm_config(model_override=model_override)
     if err:
         return f"⚠️ {err}"
+    target_model = (model_override or LLM_MODEL).strip()
     payload = {
-        "model": LLM_MODEL,
+        "model": target_model,
         "messages": messages,
         "temperature": float(temperature),
         "max_tokens": int(max_tokens),
@@ -156,14 +193,19 @@ async def _llm_chat(messages: List[Dict[str, Any]], temperature: float, max_toke
         data = r.json()
         return (data.get("choices") or [{}])[0].get("message", {}).get("content", "").strip()
 
-async def _llm_chat_stream_tokens(messages: List[Dict[str, Any]], temperature: float, max_tokens: int) -> AsyncIterator[str]:
-    err = _check_llm_config()
+async def _llm_chat_stream_tokens(
+    messages: List[Dict[str, Any]],
+    temperature: float,
+    max_tokens: int,
+    model_override: Optional[str] = None,
+) -> AsyncIterator[str]:
+    err = _check_llm_config(model_override=model_override)
     if err:
         yield f"⚠️ {err}"
         return
 
     payload = {
-        "model": LLM_MODEL,
+        "model": (model_override or LLM_MODEL).strip(),
         "messages": messages,
         "temperature": float(temperature),
         "max_tokens": int(max_tokens),
@@ -202,6 +244,14 @@ def _sse(event: str, data: Any) -> bytes:
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
+class Attachment(BaseModel):
+    file_id: Optional[str] = None
+    name: Optional[str] = None
+    filename: Optional[str] = None
+    path: Optional[str] = None
+    mime: Optional[str] = None
+
+
 class ChatBody(BaseModel):
     message: Optional[str] = None
     messages: Optional[List[Dict[str, Any]]] = None
@@ -211,6 +261,8 @@ class ChatBody(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2000, ge=1, le=8192)
     use_history: bool = True
+    model: Optional[str] = None
+    attachments: List[Attachment] = Field(default_factory=list)
 
 def _extract_text(body: ChatBody) -> str:
     if body.message and body.message.strip():
@@ -222,6 +274,30 @@ def _extract_text(body: ChatBody) -> str:
             if isinstance(c, str) and c.strip():
                 return c.strip()
     return ""
+
+def _attachments_note(body: ChatBody) -> str:
+    try:
+        if not getattr(body, "attachments", None):
+            return ""
+        details: List[str] = []
+        for att in getattr(body, "attachments", []):
+            if not att:
+                continue
+            name = getattr(att, "name", None) or getattr(att, "filename", None) or getattr(att, "file_id", None) or "plik"
+            mime = getattr(att, "mime", None)
+            path = getattr(att, "path", None)
+            label = name
+            if mime:
+                label += f" ({mime})"
+            if path:
+                label += f" -> {path}"
+            details.append(f"- {label}")
+        if details:
+            return "Załączniki użytkownika:\n" + "\n".join(details)
+    except Exception:
+        return ""
+    return ""
+
 
 def _normalize_messages(body: ChatBody, text: str, history: List[Dict[str, str]]) -> List[Dict[str, Any]]:
     msgs: List[Dict[str, Any]] = []
@@ -248,7 +324,12 @@ def _normalize_messages(body: ChatBody, text: str, history: List[Dict[str, str]]
             base = [x for x in msgs if x.get("role") == "system"]
             return base + cleaned
 
-    msgs.append({"role": "user", "content": text})
+    attachment_note = _attachments_note(body)
+    user_text = text
+    if attachment_note:
+        user_text = f"{text}\n\n{attachment_note}"
+
+    msgs.append({"role": "user", "content": user_text})
     return msgs
 
 @router.post("/assistant")
@@ -265,9 +346,17 @@ async def chat_assistant(req: Request, body: ChatBody) -> Dict[str, Any]:
         sid = _ensure_session(con, body.user_id, body.session_id)
         history = _load_context(con, sid, limit=30) if body.use_history else []
         msgs = _normalize_messages(body, text, history)
+        user_payload = msgs[-1]["content"] if msgs else text
 
-        _append_msg(con, sid, body.user_id, "user", text)
-        ans = await _llm_chat(msgs, temperature=body.temperature, max_tokens=body.max_tokens)
+        requested_model = getattr(body, "model", None)
+
+        _append_msg(con, sid, body.user_id, "user", user_payload)
+        ans = await _llm_chat(
+            msgs,
+            temperature=body.temperature,
+            max_tokens=body.max_tokens,
+            model_override=requested_model,
+        )
         _append_msg(con, sid, body.user_id, "assistant", ans)
 
         return {
@@ -275,7 +364,7 @@ async def chat_assistant(req: Request, body: ChatBody) -> Dict[str, Any]:
             "session_id": sid,
             "ts": _now(),
             "metadata": {
-                "model": LLM_MODEL,
+                "model": (requested_model or LLM_MODEL),
                 "base_url": LLM_BASE_URL,
                 "history_used": bool(body.use_history),
             },
@@ -285,8 +374,143 @@ async def chat_assistant(req: Request, body: ChatBody) -> Dict[str, Any]:
             con.close()
         except Exception:
             pass
+
+
+@router.get("/sessions")
+async def list_sessions(req: Request, limit: int = 100) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    con = _db()
+    try:
+        rows = con.execute(
+            """
+            SELECT s.id, s.user_id, s.created_at, s.updated_at, COALESCE(m.title, ""), COUNT(msg.id) AS messages
+            FROM sessions s
+            LEFT JOIN session_meta m ON m.session_id = s.id
+            LEFT JOIN messages msg ON msg.session_id = s.id
+            GROUP BY s.id
+            ORDER BY s.updated_at DESC
+            LIMIT ?
+            """,
+            (int(limit),),
+        ).fetchall()
+
+        sessions: List[Dict[str, Any]] = []
+        for row in rows:
+            sessions.append(
+                {
+                    "id": row[0],
+                    "user_id": row[1],
+                    "created_at": row[2],
+                    "updated_at": row[3],
+                    "title": row[4] or None,
+                    "messages": row[5],
+                }
+            )
+
+        return {"ok": True, "count": len(sessions), "sessions": sessions}
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+
+
+@router.get("/sessions/{session_id}")
+async def get_session(req: Request, session_id: str, limit: int = 200) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    con = _db()
+    try:
+        srow = con.execute(
+            "SELECT id, user_id, created_at, updated_at FROM sessions WHERE id=?",
+            (session_id,),
+        ).fetchone()
+        if not srow:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        messages = con.execute(
+            """
+            SELECT role, content, ts FROM messages WHERE session_id=? ORDER BY ts ASC LIMIT ?
+            """,
+            (session_id, int(limit)),
+        ).fetchall()
+        msgs = [
+            {"role": row[0], "content": row[1], "ts": row[2]} for row in messages
+        ]
+        title = _session_title(con, session_id)
+
+        return {
+            "ok": True,
+            "session_id": srow[0],
+            "user_id": srow[1],
+            "created_at": srow[2],
+            "updated_at": srow[3],
+            "title": title,
+            "messages": msgs,
+        }
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+
+
+class TitleBody(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+
+@router.post("/sessions/{session_id}/title")
+async def set_title(req: Request, session_id: str, body: TitleBody) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    title = body.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Empty title")
+
+    con = _db()
+    try:
+        exists = con.execute("SELECT 1 FROM sessions WHERE id=?", (session_id,)).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail="Session not found")
+        _set_session_title(con, session_id, title)
+        return {"ok": True, "session_id": session_id, "title": title}
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+
+
+@router.post("/sessions/{session_id}/delete")
+async def delete_session(req: Request, session_id: str) -> Dict[str, Any]:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    con = _db()
+    try:
+        exists = con.execute("SELECT 1 FROM sessions WHERE id=?", (session_id,)).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        con.execute("DELETE FROM messages WHERE session_id=?", (session_id,))
+        con.execute("DELETE FROM session_meta WHERE session_id=?", (session_id,))
+        con.execute("DELETE FROM sessions WHERE id=?", (session_id,))
+        con.commit()
+        return {"ok": True, "deleted": session_id}
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
 @router.post("/assistant/stream")
 async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingResponse:
+    if not _auth_ok(req):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
     import os
     import json
     import time
@@ -321,6 +545,9 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
 
     if not base_url:
         base_url = "https://api.deepinfra.com/v1/openai"
+    requested_model = getattr(body, "model", None)
+    if isinstance(requested_model, str) and requested_model.strip():
+        model = requested_model.strip()
     if not model:
         model = "NousResearch/Hermes-3-Llama-3.1-405B"
 
@@ -370,9 +597,27 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
         else:
             cleaned = [{"role": "user", "content": " "}]
 
+    attachment_note = _attachments_note(body)
     messages: List[Dict[str, str]] = []
     if sys_prompt:
         messages.append({"role": "system", "content": sys_prompt})
+
+    try:
+        if getattr(body, "use_history", True):
+            con_history = _db()
+            history_msgs = _load_context(con_history, getattr(body, "session_id", None) or uid, limit=30)
+            con_history.close()
+            if history_msgs:
+                messages.extend(history_msgs)
+    except Exception:
+        pass
+
+    if attachment_note:
+        if cleaned and cleaned[-1].get("role") == "user":
+            cleaned[-1]["content"] = (cleaned[-1].get("content", "") + "\n\n" + attachment_note).strip()
+        else:
+            cleaned.append({"role": "user", "content": attachment_note})
+
     messages.extend([m for m in cleaned if m.get("role") != "system"])
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -408,6 +653,8 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
             pass
         con = None
 
+    user_text = text or (cleaned[-1]["content"] if cleaned else "")
+
     async def gen():
         nonlocal con, sid
 
@@ -417,6 +664,11 @@ async def chat_assistant_stream(req: Request, body: ChatBody) -> StreamingRespon
             if callable(_db_fn) and callable(_ensure_fn):
                 con = _db_fn()
                 sid = _ensure_fn(con, uid, req_sess)
+                try:
+                    if user_text:
+                        _append_msg(con, sid, uid, "user", user_text)
+                except Exception:
+                    pass
             else:
                 sid = req_sess or str(uuid.uuid4())
         except Exception:

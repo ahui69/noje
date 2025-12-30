@@ -8,33 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from typing import Dict, Any
 
 from core.auth import auth_dependency
-
-try:
-    from core.advanced_proactive import (
-        get_proactive_suggestions, 
-        inject_suggestions_to_prompt,
-        suggestion_generator
-    )
-except ImportError:
-    # Fallback - create dummy functions
-    def get_proactive_suggestions(context=None, user_id="default", **kwargs):
-        return {"suggestions": ["Kontynuuj rozmowę"], "confidence": 0.5}
-    
-    def inject_suggestions_to_prompt(prompt, suggestions):
-        return prompt
-    
-    class DummySuggestionGenerator:
-        def get_suggestion_stats(self):
-            return {"total": 0, "accepted": 0}
-        class conversation_analyzer:
-            @staticmethod
-            def get_conversation_summary():
-                return {"messages": 0}
-            @staticmethod
-            def analyze_message(user_id, message):
-                return {"sentiment": "neutral"}
-    
-    suggestion_generator = DummySuggestionGenerator()
+from advanced_proactive import (
+    get_proactive_suggestions,
+    inject_suggestions_to_prompt,
+    suggestion_generator,
+)
 
 # Utwórz router
 router = APIRouter(
